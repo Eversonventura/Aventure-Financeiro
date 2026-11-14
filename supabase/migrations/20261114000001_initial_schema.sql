@@ -265,7 +265,19 @@ begin
   end loop;
 end $$;
 
-revoke all on all tables in schema public from anon;
+-- anon não acessa nada: revoga só as tabelas deste app (nunca o schema inteiro,
+-- para não afetar outros apps que dividam o mesmo projeto).
+do $$
+declare t text;
+begin
+  foreach t in array array[
+    'organizations','memberships','entities','people','payment_methods','categories','clients',
+    'recurring_rules','installment_groups','transactions','classification_rules','imports',
+    'org_settings','ai_insights'
+  ] loop
+    execute format('revoke all on %I from anon', t);
+  end loop;
+end $$;
 
 -- ===== Funções de fatura =====
 -- Compra no dia do fechamento (ou depois) cai na fatura seguinte.
