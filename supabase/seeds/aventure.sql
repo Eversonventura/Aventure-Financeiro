@@ -11,8 +11,13 @@ declare
 begin
   select id into v_ventura from auth.users where lower(email) = lower(v_ventura_email);
   select id into v_amanda  from auth.users where lower(email) = lower(v_amanda_email);
-  if v_ventura is null or v_amanda is null then
-    raise exception 'Usuário não encontrado: crie os dois em Authentication → Users e ajuste os e-mails.';
+  if v_ventura is null then
+    raise exception 'E-mail do Ventura não encontrado: "%". Usuários existentes: %', v_ventura_email,
+      (select coalesce(string_agg(email, ', '), 'nenhum') from auth.users);
+  end if;
+  if v_amanda is null then
+    raise exception 'E-mail da Amanda não encontrado: "%". Usuários existentes: %', v_amanda_email,
+      (select coalesce(string_agg(email, ', '), 'nenhum') from auth.users);
   end if;
   if exists (select 1 from organizations where name = 'Aventure') then
     raise exception 'Seed já aplicado (organização Aventure existe).';
