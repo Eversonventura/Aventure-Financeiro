@@ -7,7 +7,8 @@ import { loadFlow } from "@/lib/flow-data";
 import { centsToBRL } from "@/lib/format";
 import { addInvoiceMonths } from "@/lib/invoice";
 import { getCtx } from "@/lib/org";
-import { monthMetrics, series12, type Alert, type DreRow } from "@/lib/painel";
+import { loadDreInput } from "@/lib/dre-data";
+import { monthMetrics, series12, type Alert } from "@/lib/painel";
 
 export default async function Page({ searchParams }: { searchParams: Promise<{ mes?: string }> }) {
   const sp = await searchParams;
@@ -21,20 +22,17 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ m
   const flowFrom = mes < atual ? mes : atual;
   const flowTo = monthEnd(addInvoiceMonths(mes > atual ? mes : atual, mes > atual ? 0 : 5));
 
-  const [dre, ret, flow, contas, rev, cartoes] = await Promise.all([
-    supabase.from("v_dre_monthly").select("month, dre_line, amount_cents").gte("month", addInvoiceMonths(mes, -11)).lte("month", mes),
-    supabase.from("v_settlements").select("amount_cents").eq("month", mes).eq("kind", "withdrawal"),
+  const [dreInput, flow, contas, rev, cartoes] = await Promise.all([
+    loadDreInput(supabase, addInvoiceMonths(mes, -11), mes),
     loadFlow(supabase, flowFrom, flowTo, hoje),
     loadContasDoMes(supabase, atual, hoje),
     supabase.from("transactions").select("id", { count: "exact", head: true }).eq("needs_review", true),
     supabase.from("payment_methods").select("id").eq("kind", "credit_card").eq("active", true).or("closing_day.is.null,due_day.is.null"),
   ]);
 
-  const rows = ((dre.data ?? []) as { month: string; dre_line: string; amount_cents: number | string }[])
-    .map((r): DreRow => ({ month: r.month, dre_line: r.dre_line, amount_cents: Number(r.amount_cents) }));
-  const m = monthMetrics(rows, mes);
-  const serie = series12(rows, mes);
-  const retiradas = (ret.data ?? []).reduce((s, r) => s + Number(r.amount_cents), 0) + m.distribuicao;
+  const m = monthMetrics(dreInput, mes);
+  const serie = series12(dreInput, mes);
+  const retiradas = m.distribuicao;
   const margem = m.receita > 0 ? Math.round((m.resultado / m.receita) * 100) : null;
 
   const meses = byMonth(flow.days);

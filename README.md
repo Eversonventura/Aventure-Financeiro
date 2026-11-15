@@ -37,3 +37,9 @@ Variáveis: `ANTHROPIC_API_KEY` e `ANTHROPIC_MODEL_HAIKU` (padrão `claude-haiku
 No lançamento rápido, o botão **Voz** transcreve no navegador (Web Speech API, ou o ditado do teclado) e o Claude Sonnet vira a frase em campos do formulário.
 O botão **Foto do cupom** reduz a imagem no celular, guarda em `receipts/{org}/{lançamento}.jpg` (bucket privado) e o Claude Sonnet lê estabelecimento, data, total e parcelas.
 Nada é salvo sozinho: a pessoa confere e toca em Salvar. Valor ilegível volta vazio. O cupom abre por link assinado de 60 segundos. Não precisa de migration nova.
+
+## DRE completo (etapa 10)
+`DRE` mostra o mês na estrutura da especificação (ME, Simples Nacional), com % da receita, mês anterior, variação e média dos 3 meses anteriores. Clicar numa linha abre os lançamentos dela (`/dre/<linha>`).
+O DAS vale o pago quando há lançamento; sem ele, usa a alíquota efetiva × receita (Configurações → Geral) e mostra a conferência quando os dois existem.
+`DRE → Gastos da Aventure fora do PJ` lista o que é da empresa mas caiu em meio pessoal e permite migrar a recorrência para o cartão PJ.
+Aplique antes a migration `20261115000004_dre_signed.sql` (separa entradas e saídas dentro de cada linha do DRE).

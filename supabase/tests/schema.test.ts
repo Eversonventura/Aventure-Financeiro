@@ -199,3 +199,26 @@ describe("classificação: regras e sugestões da IA", () => {
     await expect(as(U.a, `insert into classification_rules (org_id,match_text,entity_id) values ('${O.a}','y','${EB}')`)).rejects.toThrow(/foreign key/);
   });
 });
+
+describe("v_dre_monthly com entradas e saídas separadas", () => {
+  const CATF = "30000000-0000-4000-8000-0000000000f1", CATC = "30000000-0000-4000-8000-0000000000f2";
+  beforeAll(async () => {
+    await db.exec(`reset role;
+      insert into categories (id,org_id,name,direction,dre_line) values ('${CATF}','${O.a}','Rendimentos e tarifas','out','financial'),('${CATC}','${O.a}','Ferramentas','out','cost_of_services');
+      insert into transactions (org_id,type,status,description,amount_cents,competence_date,cash_date,entity_id,category_id) values
+        ('${O.a}','income','paid','rendimento',20000,'2027-03-05','2027-03-05','${EA}','${CATF}'),
+        ('${O.a}','expense','paid','tarifa',5000,'2027-03-06','2027-03-06','${EA}','${CATF}'),
+        ('${O.a}','expense','paid','Canva',70000,'2027-03-07','2027-03-07','${EA}','${CATC}'),
+        ('${O.a}','income','paid','estorno',10000,'2027-03-08','2027-03-08','${EA}','${CATC}');`);
+  });
+  it("mantém amount_cents e acrescenta income_cents e expense_cents", async () => {
+    const r = await as(U.a, `select dre_line, amount_cents::int a, income_cents::int i, expense_cents::int e from v_dre_monthly where month='2027-03-01' order by dre_line`);
+    expect(r).toEqual([
+      { dre_line: "cost_of_services", a: 80000, i: 10000, e: 70000 },
+      { dre_line: "financial", a: 25000, i: 20000, e: 5000 },
+    ]);
+  });
+  it("continua respeitando a RLS", async () => {
+    expect(await as(U.b, `select 1 from v_dre_monthly where month='2027-03-01'`)).toHaveLength(0);
+  });
+});
