@@ -1,33 +1,28 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Anton, Fredoka, Inter, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { RegisterSW } from "@/components/register-sw";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
+const space = Space_Grotesk({ variable: "--font-space", subsets: ["latin"] });
+const fredoka = Fredoka({ variable: "--font-fredoka", subsets: ["latin"] });
+const anton = Anton({ variable: "--font-anton", subsets: ["latin"], weight: "400" });
 
 export const metadata: Metadata = {
-  title: "Caixa Aventure",
+  title: "Aventure Financeiro",
   description: "Caixa único da família e da Aventure",
-  appleWebApp: { capable: true, title: "Caixa", statusBarStyle: "default" },
+  appleWebApp: { capable: true, title: "Financeiro", statusBarStyle: "black" },
 };
 
-export const viewport: Viewport = { themeColor: "#18181b" };
+export const viewport: Viewport = { themeColor: "#0b0b10" };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="pt-BR"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${inter.variable} ${space.variable} ${anton.variable} ${fredoka.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}
+      <body className="min-h-full flex flex-col bg-canvas text-ink">{children}
         <RegisterSW />
       </body>
     </html>

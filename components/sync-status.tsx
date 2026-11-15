@@ -29,14 +29,14 @@ export function SyncStatus() {
 
   if (pending === 0 && failed.length === 0) return null;
   return (
-    <div className="fixed inset-x-0 top-0 z-20 flex flex-col gap-1 bg-amber-50 p-2 text-sm text-amber-900">
+    <div className="fixed inset-x-0 top-0 z-20 flex flex-col gap-1 bg-amber-400/10 p-2 text-sm text-amber-200">
       {pending > 0 && (
         <button className="text-left" onClick={() => void flushQueue().then(refresh)}>
           {pending} lançamento(s) aguardando envio. Toque para tentar agora.
         </button>
       )}
       {failed.map((f) => (
-        <div key={f.id} className="flex items-center justify-between gap-2 text-red-700">
+        <div key={f.id} className="flex items-center justify-between gap-2 text-red-300">
           <span>Recusado: {f.payload.description} {centsToBRL(f.payload.amount_cents)} — {f.error}</span>
           <button className="underline" onClick={() => void discardItem(f.id).then(refresh)}>Descartar</button>
         </div>

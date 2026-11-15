@@ -1,20 +1,30 @@
 import Link from "next/link";
-import { Nav } from "@/components/nav";
+import { Shell } from "@/components/shell";
 import { SyncStatus } from "@/components/sync-status";
+import { getCtx } from "@/lib/org";
+import { signOut } from "./actions";
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+const PAPEL: Record<string, string> = {
+  owner: "Dono · Aventure", editor: "Editor · Aventure", viewer: "Leitura · Aventure", bpo_analyst: "Analista BPO",
+};
+
+export default async function AppLayout({ children }: { children: React.ReactNode }) {
+  const { supabase, userId, role } = await getCtx();
+  const [{ data: person }, { count }] = await Promise.all([
+    supabase.from("people").select("name").eq("user_id", userId).maybeSingle(),
+    supabase.from("transactions").select("id", { count: "exact", head: true }).eq("needs_review", true),
+  ]);
   return (
-    <div className="flex min-h-dvh">
-      <Nav />
+    <Shell name={person?.name ?? "Usuário"} role={PAPEL[role] ?? "Aventure"} reviewCount={count ?? 0} signOut={signOut}>
       <SyncStatus />
-      <main className="flex-1 p-4 pb-24 md:p-8 md:pb-8">{children}</main>
+      {children}
       <Link
         href="/lancamentos/novo"
         aria-label="Novo lançamento"
-        className="fixed right-4 bottom-20 z-10 flex size-14 items-center justify-center rounded-full bg-zinc-900 text-3xl text-white shadow-lg md:bottom-8 md:right-8"
+        className="fixed right-4 bottom-20 z-10 flex size-14 items-center justify-center rounded-full bg-gold text-3xl text-canvas shadow-lg shadow-black/40 md:hidden"
       >
         +
       </Link>
-    </div>
+    </Shell>
   );
 }

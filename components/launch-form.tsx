@@ -30,7 +30,7 @@ function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; chi
       type="button"
       onClick={onClick}
       aria-pressed={on}
-      className={`rounded-full border px-4 py-2 text-sm ${on ? "border-zinc-900 bg-zinc-900 text-white" : "border-zinc-300 bg-white"}`}
+      className={`rounded-full border px-4 py-2 text-sm ${on ? "border-brand bg-brand text-white" : "border-line-strong bg-surface-2 text-ink"}`}
     >
       {children}
     </button>
@@ -46,7 +46,7 @@ const noop = () => () => {};
 /** Data, id e últimos usados dependem do aparelho: o formulário só monta no cliente. */
 export function LaunchForm({ refs }: { refs: RefData }) {
   const noCliente = useSyncExternalStore(noop, () => true, () => false);
-  if (!noCliente) return <p className="text-zinc-500">Carregando…</p>;
+  if (!noCliente) return <p className="text-muted">Carregando…</p>;
   return <LaunchFormInner refs={refs} />;
 }
 
@@ -127,7 +127,7 @@ function LaunchFormInner({ refs }: { refs: RefData }) {
     amountRef.current?.focus();
   }
 
-  const input = "w-full rounded-lg border border-zinc-300 bg-white px-3 py-3 text-base";
+  const input = "w-full rounded-lg border border-line-strong bg-surface-2 text-ink px-3 py-3 text-base";
   const pmOptions = refs.methods.map((m) => <option key={m.id} value={m.id}>{m.name}</option>);
 
   return (
@@ -139,7 +139,7 @@ function LaunchFormInner({ refs }: { refs: RefData }) {
             type="button"
             onClick={() => { setType(k.value); setCategoryId(""); setInstallments(1); }}
             aria-pressed={type === k.value}
-            className={`flex-1 rounded-lg py-2.5 text-sm font-medium ${type === k.value ? "bg-zinc-900 text-white" : "bg-zinc-100"}`}
+            className={`flex-1 rounded-lg py-2.5 text-sm font-medium ${type === k.value ? "bg-brand text-white" : "bg-surface-2"}`}
           >
             {k.label}
           </button>
@@ -155,7 +155,7 @@ function LaunchFormInner({ refs }: { refs: RefData }) {
           placeholder="0,00"
           value={amountText}
           onChange={(e) => setAmountText(e.target.value)}
-          className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-3 text-3xl font-semibold"
+          className="w-full rounded-lg border border-line-strong bg-surface-2 text-ink px-3 py-3 text-3xl font-semibold"
         />
       </label>
 
@@ -190,9 +190,9 @@ function LaunchFormInner({ refs }: { refs: RefData }) {
               <option key={n} value={n}>{n === 1 ? "À vista (1x)" : `${n}x`}</option>
             ))}
           </select>
-          {preview && <span className="text-sm text-zinc-600">{preview}</span>}
+          {preview && <span className="text-sm text-muted">{preview}</span>}
           {method && (method.closing_day == null || method.due_day == null) && (
-            <span className="text-sm text-red-600">
+            <span className="text-sm text-red-400">
               Este cartão está sem fechamento/vencimento. Defina em Configurações → Meios de pagamento.
             </span>
           )}
@@ -210,7 +210,7 @@ function LaunchFormInner({ refs }: { refs: RefData }) {
 
       {type !== "transfer" && (
         <div className="flex flex-col gap-2">
-          <span className="text-sm font-medium">Categoria <span className="font-normal text-zinc-500">(sem categoria vai para revisão)</span></span>
+          <span className="text-sm font-medium">Categoria <span className="font-normal text-muted">(sem categoria vai para revisão)</span></span>
           <div className="flex flex-wrap gap-2">
             {categories.map((c) => (
               <Chip key={c.id} on={categoryId === c.id} onClick={() => setCategoryId(categoryId === c.id ? "" : c.id)}>{c.name}</Chip>
@@ -219,9 +219,9 @@ function LaunchFormInner({ refs }: { refs: RefData }) {
         </div>
       )}
 
-      <details className="rounded-lg border border-zinc-200">
+      <details className="rounded-lg border border-line">
         <summary className="cursor-pointer p-3 text-sm">Data e quem gastou</summary>
-        <div className="flex flex-col gap-3 border-t border-zinc-100 p-3">
+        <div className="flex flex-col gap-3 border-t border-line p-3">
           <label className="flex flex-col gap-1">
             <span className="text-sm">Data</span>
             <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={input} />
@@ -237,13 +237,13 @@ function LaunchFormInner({ refs }: { refs: RefData }) {
       {msg && (
         <p
           role={msg.tone === "erro" ? "alert" : "status"}
-          className={`rounded-lg p-3 text-sm ${msg.tone === "ok" ? "bg-green-50 text-green-700" : msg.tone === "info" ? "bg-amber-50 text-amber-800" : "bg-red-50 text-red-700"}`}
+          className={`rounded-lg p-3 text-sm ${msg.tone === "ok" ? "bg-emerald-500/10 text-emerald-300" : msg.tone === "info" ? "bg-amber-400/10 text-amber-300" : "bg-red-500/10 text-red-300"}`}
         >
           {msg.text}
         </p>
       )}
 
-      <button disabled={saving} className="rounded-xl bg-zinc-900 py-4 text-lg font-semibold text-white disabled:opacity-60">
+      <button disabled={saving} className="rounded-xl bg-gold py-4 text-lg font-semibold text-canvas hover:brightness-110 disabled:opacity-60">
         {saving ? "Salvando…" : "Salvar"}
       </button>
     </form>

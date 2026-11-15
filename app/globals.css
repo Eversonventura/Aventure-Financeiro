@@ -1,26 +1,54 @@
 @import "tailwindcss";
 
+/* Tokens de design (visual alinhado ao Desbrava: tema escuro, rosa e amarelo).
+   Para ajustar a identidade visual do app inteiro, mude só estes valores. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --canvas: #0b0b10;
+  --side: #0f0f15;
+  --surface: #15151c;
+  --surface-2: #1d1d26;
+  --line: #24242e;
+  --line-strong: #34343f;
+  --ink: #f4f4f7;
+  --muted: #9a9aa8;
+  --brand: #e5197d;
+  --brand-deep: #c2135f;
+  --gold: #ffc72c;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-canvas: var(--canvas);
+  --color-side: var(--side);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-brand: var(--brand);
+  --color-brand-deep: var(--brand-deep);
+  --color-gold: var(--gold);
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-heading: var(--font-space), var(--font-inter), sans-serif;
+  --font-logo: var(--font-fredoka), var(--font-inter), sans-serif;
+  --font-display: var(--font-anton), Impact, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  color-scheme: dark;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: var(--font-inter), system-ui, sans-serif;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-space), var(--font-inter), sans-serif;
+  letter-spacing: -0.01em;
+}
+
+::placeholder {
+  color: var(--muted);
 }

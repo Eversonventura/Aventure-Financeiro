@@ -15,9 +15,9 @@ export default function Page() {
     <div className="mx-auto flex max-w-2xl flex-col gap-4">
       <h1 className="text-2xl font-semibold">Configurações</h1>
       {SECOES.map((s) => (
-        <Link key={s.href} href={s.href} className="rounded-xl border border-zinc-200 bg-white p-4 hover:bg-zinc-50">
+        <Link key={s.href} href={s.href} className="rounded-xl border border-line bg-surface p-4 hover:bg-surface-2">
           <div className="font-medium">{s.titulo}</div>
-          <div className="text-sm text-zinc-500">{s.desc}</div>
+          <div className="text-sm text-muted">{s.desc}</div>
         </Link>
       ))}
     </div>

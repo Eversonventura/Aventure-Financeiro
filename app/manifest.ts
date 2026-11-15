@@ -2,13 +2,13 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Caixa Aventure",
-    short_name: "Caixa",
+    name: "Aventure Financeiro",
+    short_name: "Financeiro",
     description: "Caixa único da família e da Aventure",
     start_url: "/",
     display: "standalone",
-    background_color: "#ffffff",
-    theme_color: "#18181b",
+    background_color: "#0b0b10",
+    theme_color: "#0b0b10",
     lang: "pt-BR",
     icons: [
       { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },

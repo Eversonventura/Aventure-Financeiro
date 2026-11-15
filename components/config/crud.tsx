@@ -11,7 +11,7 @@ export type Field = {
 };
 export type Values = Record<string, string>;
 
-const input = "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-base";
+const input = "w-full rounded-lg border border-line-strong bg-surface-2 text-ink px-3 py-2.5 text-base";
 
 function FieldInput({ f, value }: { f: Field; value: string }) {
   if (f.type === "checkbox") {
@@ -41,7 +41,7 @@ function FieldInput({ f, value }: { f: Field; value: string }) {
           className={input}
         />
       )}
-      {f.hint && <span className="text-xs text-zinc-500">{f.hint}</span>}
+      {f.hint && <span className="text-xs text-muted">{f.hint}</span>}
     </label>
   );
 }
@@ -59,7 +59,7 @@ export function RecordForm({
     <form action={action} className="flex flex-col gap-3">
       {id && <input type="hidden" name="id" value={id} />}
       {fields.map((f) => <FieldInput key={f.name} f={f} value={values[f.name] ?? ""} />)}
-      <button className="rounded-lg bg-zinc-900 px-4 py-3 text-white">{submitLabel}</button>
+      <button className="rounded-lg bg-gold px-4 py-3 font-semibold text-canvas hover:brightness-110">{submitLabel}</button>
     </form>
   );
 }
@@ -80,25 +80,25 @@ export function CrudList<R extends { id: string }>({
 }) {
   return (
     <div className="flex flex-col gap-3">
-      {rows.length === 0 && <p className="text-zinc-500">{emptyText}</p>}
+      {rows.length === 0 && <p className="text-muted">{emptyText}</p>}
       {rows.map((r) => (
-        <details key={r.id} className="rounded-xl border border-zinc-200 bg-white">
+        <details key={r.id} className="rounded-xl border border-line bg-surface">
           <summary className="cursor-pointer list-none p-4">
             <div className="font-medium">{title(r)}</div>
-            {subtitle && <div className="text-sm text-zinc-500">{subtitle(r)}</div>}
+            {subtitle && <div className="text-sm text-muted">{subtitle(r)}</div>}
           </summary>
-          <div className="flex flex-col gap-3 border-t border-zinc-100 p-4">
+          <div className="flex flex-col gap-3 border-t border-line p-4">
             <RecordForm action={saveAction} fields={fields} values={valuesOf(r)} id={r.id} />
             <form action={deleteAction}>
               <input type="hidden" name="id" value={r.id} />
-              <button className="text-sm text-red-600 underline">Apagar</button>
+              <button className="text-sm text-red-400 underline">Apagar</button>
             </form>
           </div>
         </details>
       ))}
-      <details className="rounded-xl border border-dashed border-zinc-300">
+      <details className="rounded-xl border border-dashed border-line-strong">
         <summary className="cursor-pointer p-4 font-medium">+ {newLabel}</summary>
-        <div className="border-t border-zinc-100 p-4">
+        <div className="border-t border-line p-4">
           <RecordForm action={saveAction} fields={fields} values={newValues} submitLabel="Adicionar" />
         </div>
       </details>
@@ -117,11 +117,11 @@ export async function Section({
   const { erro, ok } = await searchParams;
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-4">
-      <a href="/configuracoes" className="text-sm text-zinc-500">← Configurações</a>
+      <a href="/configuracoes" className="text-sm text-muted">← Configurações</a>
       <h1 className="text-2xl font-semibold">{title}</h1>
-      {description && <p className="text-zinc-600">{description}</p>}
-      {erro && <p role="alert" className="rounded-lg bg-red-50 p-3 text-red-700">{erro}</p>}
-      {ok && !erro && <p role="status" className="rounded-lg bg-green-50 p-3 text-green-700">Salvo.</p>}
+      {description && <p className="text-muted">{description}</p>}
+      {erro && <p role="alert" className="rounded-lg bg-red-500/10 p-3 text-red-300">{erro}</p>}
+      {ok && !erro && <p role="status" className="rounded-lg bg-emerald-500/10 p-3 text-emerald-300">Salvo.</p>}
       {children}
     </div>
   );
