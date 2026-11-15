@@ -101,3 +101,22 @@ export function DailyChart({ data }: { data: { day: number; label: string; saida
     </figure>
   );
 }
+
+/** Quanto pesa por mês (parcelas de empréstimos e consórcios ainda não pagas). */
+export function CommitmentsChart({ data }: { data: { label: string; cents: number }[] }) {
+  return (
+    <figure aria-label="Parcelas a pagar por mês">
+      <div className="h-56 w-full">
+        <ResponsiveContainer width="100%" height="100%" minWidth={0} initialDimension={{ width: 360, height: 224 }}>
+          <ComposedChart data={data} margin={{ top: 8, right: 4, bottom: 0, left: 0 }} barCategoryGap="30%">
+            <CartesianGrid vertical={false} stroke={GRID} />
+            <XAxis dataKey="label" tickLine={false} axisLine={{ stroke: GRID }} tick={{ fill: TEXTO, fontSize: 11 }} interval={0} />
+            <YAxis tickFormatter={compactBRL} tickLine={false} axisLine={false} width={76} tick={{ fill: TEXTO, fontSize: 11 }} />
+            <Tooltip content={<Tip />} cursor={{ fill: "rgba(255,255,255,0.04)" }} />
+            <Bar dataKey="cents" name="Parcelas" fill={COR.despesa} radius={[4, 4, 0, 0]} maxBarSize={24} />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+    </figure>
+  );
+}

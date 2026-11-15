@@ -280,3 +280,37 @@ describe("apagar cadastros que já têm lançamentos (funções seguras)", () =>
     await expect(as(U.b, `select delete_client_safe('90000000-0000-4000-8000-0000000000d2')`)).rejects.toThrow(/não encontrado/);
   });
 });
+
+describe("compromissos (empréstimos, financiamentos e consórcios)", () => {
+  const CM = "a0000000-0000-4000-8000-0000000000e1";
+  const mk = (id: string, org = O.a, ent = EA, extra = "") =>
+    `insert into commitments (id,org_id,kind,name,entity_id,installment_cents,installments,paid_before,first_due_date${extra ? "," + extra.split("|")[0] : ""})
+     values ('${id}','${org}','consortium','Consórcio Moto','${ent}',85000,12,4,'2026-07-10'${extra ? "," + extra.split("|")[1] : ""})`;
+  it("cria o compromisso; parcelas ligadas por commitment_id", async () => {
+    await as(U.a, mk(CM));
+    await as(U.a, `insert into transactions (org_id,type,status,description,amount_cents,competence_date,cash_date,entity_id,source,external_id,commitment_id)
+      values ('${O.a}','expense','forecast','Consórcio Moto 5/12',85000,'2026-11-10','2026-11-10','${EA}','recurring','commit:${CM}:5','${CM}')`);
+    expect(await as(U.a, `select 1 from transactions where commitment_id='${CM}'`)).toHaveLength(1);
+  });
+  it("a mesma parcela não duplica (chave única)", async () => {
+    const r = await as(U.a, `insert into transactions (org_id,type,description,amount_cents,competence_date,cash_date,entity_id,source,external_id,commitment_id)
+      values ('${O.a}','expense','x',1,'2026-11-10','2026-11-10','${EA}','recurring','commit:${CM}:5','${CM}') on conflict (org_id, source, external_id) do nothing returning id`);
+    expect(r).toHaveLength(0);
+  });
+  it("já pagas devem ser menos que o total, e parcela precisa ser positiva", async () => {
+    await expect(as(U.a, mk("a0000000-0000-4000-8000-0000000000e2").replace("85000,12,4", "85000,12,12"))).rejects.toThrow(/check/);
+    await expect(as(U.a, mk("a0000000-0000-4000-8000-0000000000e3").replace("85000,12,4", "0,12,4"))).rejects.toThrow(/check/);
+  });
+  it("isolamento: outra organização não vê, viewer não cria, e não aponta para entidade de outra organização", async () => {
+    expect(await as(U.b, `select 1 from commitments`)).toHaveLength(0);
+    await expect(as(U.v, mk("a0000000-0000-4000-8000-0000000000e4"))).rejects.toThrow(/row-level security/);
+    await expect(as(U.a, mk("a0000000-0000-4000-8000-0000000000e5", O.a, EB))).rejects.toThrow(/foreign key/);
+  });
+  it("apagar o compromisso mantém as parcelas pagas (sem vínculo) e quem apaga é o dono", async () => {
+    await db.exec(`reset role; update transactions set status='paid', paid_amount_cents=85000 where commitment_id='${CM}'`);
+    await expect(as(U.v, `delete from commitments where id='${CM}'`)).resolves.toBeDefined();
+    expect(await as(U.a, `select 1 from commitments where id='${CM}'`)).toHaveLength(1); // viewer não apagou
+    await as(U.a, `delete from commitments where id='${CM}'`);
+    expect(await as(U.a, `select 1 from transactions where external_id='commit:${CM}:5' and commitment_id is null and status='paid'`)).toHaveLength(1);
+  });
+});

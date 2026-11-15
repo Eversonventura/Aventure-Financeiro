@@ -48,3 +48,8 @@ Aplique antes a migration `20261115000004_dre_signed.sql` (separa entradas e sa�
 - Lançamento: categoria em lista suspensa com "+ Nova categoria"; entrada com "Quem recebe" e cliente (com "+ Novo cliente").
 - Configurações: apagar pessoas, entidades, categorias e clientes que já têm lançamentos (entidades movem o que as usa para outra). Aplique a migration `20261115000005_safe_deletes.sql`.
 - `Clientes`: cadastro mensal simples (nome, valor, dia), painel do mês (esperado, recebido, atrasados, concentração) e marcar como recebido.
+
+## Empréstimos e consórcios
+`Empréstimos e consórcios` cadastra empréstimo, financiamento ou consórcio (nome, parcela, total, quantas já foram pagas, próximo vencimento) e gera as parcelas que faltam como lançamentos previstos ligados por `commitment_id`.
+Elas entram no fluxo de caixa, em Contas do mês (onde se marca como paga, com o valor real) e no Início. Editar valor ou total atualiza só as parcelas não pagas; encerrar remove as futuras.
+Aplique antes a migration `20261115000006_commitments.sql`.
