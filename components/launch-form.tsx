@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { brlToCents, centsToBRL } from "@/lib/format";
+import { IconCamera, IconMic } from "@/components/icons";
+import type { Capture } from "@/lib/capture/types";
+import { brlToCents, centsToBRL, centsToInput } from "@/lib/format";
+import { compressImage } from "@/lib/image";
 import { buildLaunch, launchSchema, type MethodInfo } from "@/lib/launch";
 import { fitsEntity } from "@/lib/categories";
 import { sendOrQueue } from "@/lib/queue";
@@ -11,6 +14,16 @@ export type RefData = {
   people: { id: string; name: string; default_entity_id: string | null; isMe: boolean }[];
   methods: (MethodInfo & { name: string })[];
   categories: { id: string; name: string; applies_to: "pj" | "pf" | "shared" | null; direction: "in" | "out" }[];
+};
+
+type SpeechRec = {
+  lang: string; interimResults: boolean; continuous: boolean; start(): void; stop(): void;
+  onresult: ((e: { results: ArrayLike<{ 0: { transcript: string }; isFinal: boolean }> }) => void) | null;
+  onerror: (() => void) | null; onend: (() => void) | null;
+};
+const speechCtor = (): (new () => SpeechRec) | null => {
+  const w = window as unknown as { SpeechRecognition?: new () => SpeechRec; webkitSpeechRecognition?: new () => SpeechRec };
+  return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
 };
 
 type Kind = "expense" | "income" | "transfer";
@@ -72,6 +85,13 @@ function LaunchFormInner({ refs }: { refs: RefData }) {
   const [entityTouched, setEntityTouched] = useState(false);
   const [categoryTouched, setCategoryTouched] = useState(false);
   const [sugg, setSugg] = useState<Suggestion | null>(null);
+  const [receiptPath, setReceiptPath] = useState<string | null>(null);
+  const [voiceOpen, setVoiceOpen] = useState(false);
+  const [phrase, setPhrase] = useState("");
+  const [listening, setListening] = useState(false);
+  const [busy, setBusy] = useState<"voice" | "photo" | null>(null);
+  const [canListen] = useState(() => speechCtor() !== null);
+  const recRef = useRef<SpeechRec | null>(null);
   const amountRef = useRef<HTMLInputElement>(null);
 
   const method = refs.methods.find((m) => m.id === methodId) ?? null;
@@ -122,6 +142,7 @@ function LaunchFormInner({ refs }: { refs: RefData }) {
       amount_cents: cents, date, installments: isCard ? installments : 1,
       payment_method_id: methodId || null, to_payment_method_id: type === "transfer" ? toMethodId || null : null,
       entity_id: entityId, person_id: personId || null, category_id: categoryOk && type !== "transfer" ? categoryId : null,
+      receipt_path: type === "transfer" ? null : receiptPath,
     });
     return parsed.success ? parsed.data : null;
   })();
@@ -131,6 +152,84 @@ function LaunchFormInner({ refs }: { refs: RefData }) {
     built?.ok && built.rows[0].invoice_month && draft
       ? `${draft.installments}x de ${centsToBRL(built.rows[1]?.amount_cents ?? built.rows[0].amount_cents)}${draft.installments > 1 && built.rows[0].amount_cents !== built.rows[1].amount_cents ? ` (1ª: ${centsToBRL(built.rows[0].amount_cents)})` : ""} · fatura de ${mesAno(built.rows[0].invoice_month)}, vence ${dataBR(built.rows[0].cash_date)}`
       : null;
+
+  /** Preenche o formulário com o que a voz ou a foto entendeu; a pessoa confere e toca em Salvar. */
+  function applyCapture(c: Capture) {
+    if (c.type) { setType(c.type); setCategoryId(""); }
+    if (c.amount_cents) setAmountText(centsToInput(c.amount_cents));
+    if (c.description) setDescription(c.description);
+    if (c.date) setDate(c.date);
+    const pmId = c.payment_method_id ?? methodId;
+    if (c.payment_method_id) setMethodId(c.payment_method_id);
+    const isCardMethod = refs.methods.find((m) => m.id === pmId)?.kind === "credit_card";
+    if (c.installments != null) setInstallments(c.installments > 1 && isCardMethod && (c.type ?? type) === "expense" ? c.installments : 1);
+    if (c.entity_id) { setEntityId(c.entity_id); setEntityTouched(true); setCategoryId(""); }
+    const faltou = [c.amount_cents == null ? "o valor" : null, !c.description ? "a descrição" : null].filter(Boolean);
+    setMsg({
+      tone: c.confidence < 0.6 || faltou.length ? "erro" : "info",
+      text: faltou.length ? `Não consegui ler ${faltou.join(" e ")}. Preencha e confira.` : c.confidence < 0.6 ? "Leitura com pouca certeza: confira os campos antes de salvar." : "Preenchido. Confira e toque em Salvar.",
+    });
+  }
+
+  async function interpret(text: string) {
+    if (!text.trim()) return;
+    if (!navigator.onLine) return setMsg({ tone: "erro", text: "Sem internet: lance à mão. A fila offline guarda e envia depois." });
+    setBusy("voice");
+    try {
+      const res = await fetch("/api/voz", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ text }) });
+      const body = (await res.json().catch(() => null)) as { capture?: Capture; error?: string } | null;
+      if (!res.ok || !body?.capture) return setMsg({ tone: "erro", text: body?.error ?? "Não consegui entender." });
+      applyCapture(body.capture);
+    } catch {
+      setMsg({ tone: "erro", text: "Sem conexão. Tente de novo." });
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  function toggleListening() {
+    if (listening) { recRef.current?.stop(); return; }
+    const SR = speechCtor();
+    if (!SR) return;
+    const r = new SR();
+    r.lang = "pt-BR";
+    r.interimResults = true;
+    r.continuous = false;
+    r.onresult = (e) => {
+      const t = Array.from(e.results).map((x) => x[0].transcript).join(" ");
+      setPhrase(t);
+      if (e.results[e.results.length - 1].isFinal) void interpret(t);
+    };
+    r.onerror = () => setListening(false);
+    r.onend = () => setListening(false);
+    recRef.current = r;
+    setMsg(null);
+    setListening(true);
+    r.start();
+  }
+
+  async function onPhoto(file: File | undefined) {
+    if (!file) return;
+    if (!navigator.onLine) return setMsg({ tone: "erro", text: "Sem internet: a foto precisa de conexão. Lance à mão." });
+    setBusy("photo");
+    setMsg(null);
+    try {
+      const blob = await compressImage(file);
+      const fd = new FormData();
+      fd.append("file", blob, "cupom.jpg");
+      fd.append("launch_id", launchId);
+      const res = await fetch("/api/foto", { method: "POST", body: fd });
+      const body = (await res.json().catch(() => null)) as { path?: string; capture?: Capture | null; warning?: string; error?: string } | null;
+      if (!res.ok || !body?.path) return setMsg({ tone: "erro", text: body?.error ?? "Não foi possível enviar a foto." });
+      setReceiptPath(body.path);
+      if (body.capture) applyCapture(body.capture);
+      else setMsg({ tone: "info", text: body.warning ?? "Foto anexada. Preencha os campos." });
+    } catch {
+      setMsg({ tone: "erro", text: "Não consegui processar a imagem. Tente outra foto." });
+    } finally {
+      setBusy(null);
+    }
+  }
 
   async function salvar(e: React.FormEvent) {
     e.preventDefault();
@@ -156,6 +255,9 @@ function LaunchFormInner({ refs }: { refs: RefData }) {
     setAmountText("");
     setDescription("");
     setSugg(null);
+    setReceiptPath(null);
+    setPhrase("");
+    setVoiceOpen(false);
     setEntityTouched(false);
     setCategoryTouched(false);
     setInstallments(1);
@@ -181,6 +283,47 @@ function LaunchFormInner({ refs }: { refs: RefData }) {
           </button>
         ))}
       </div>
+
+      {type !== "transfer" && (
+        <div className="flex flex-col gap-2">
+          <div className="grid grid-cols-2 gap-2">
+            <button type="button" onClick={() => setVoiceOpen((v) => !v)} disabled={busy !== null}
+              className="flex items-center justify-center gap-2 rounded-xl border border-line-strong bg-surface-2 py-3 text-sm font-medium disabled:opacity-60">
+              <IconMic width={18} height={18} /> Voz
+            </button>
+            <label className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-line-strong bg-surface-2 py-3 text-sm font-medium ${busy ? "opacity-60" : ""}`}>
+              <IconCamera width={18} height={18} /> {busy === "photo" ? "Lendo…" : "Foto do cupom"}
+              <input type="file" accept="image/*" className="sr-only" disabled={busy !== null}
+                onChange={(e) => { void onPhoto(e.target.files?.[0]); e.target.value = ""; }} />
+            </label>
+          </div>
+          {voiceOpen && (
+            <div className="flex flex-col gap-2 rounded-xl border border-line bg-surface p-3">
+              <div className="flex gap-2">
+                <input value={phrase} onChange={(e) => setPhrase(e.target.value)} placeholder="Ex.: gastei 45 no Cometa no Itaú em 3 vezes"
+                  className="min-w-0 flex-1 rounded-lg border border-line-strong bg-surface-2 px-3 py-3 text-base text-ink" />
+                {canListen && (
+                  <button type="button" onClick={toggleListening} aria-pressed={listening} aria-label={listening ? "Parar de ouvir" : "Falar"}
+                    className={`flex size-12 shrink-0 items-center justify-center rounded-full ${listening ? "animate-pulse bg-brand text-white" : "bg-surface-2"}`}>
+                    <IconMic width={20} height={20} />
+                  </button>
+                )}
+              </div>
+              <button type="button" onClick={() => void interpret(phrase)} disabled={busy !== null || phrase.trim().length < 3}
+                className="rounded-lg bg-surface-2 py-2.5 text-sm font-medium disabled:opacity-50">
+                {busy === "voice" ? "Entendendo…" : "Preencher o formulário"}
+              </button>
+              {!canListen && <p className="text-xs text-muted">Este navegador não ouve direto. Use o microfone do teclado para ditar a frase.</p>}
+            </div>
+          )}
+          {receiptPath && (
+            <p className="flex items-center justify-between rounded-lg bg-emerald-500/10 px-3 py-2 text-sm text-emerald-300">
+              Cupom anexado
+              <button type="button" className="underline" onClick={() => setReceiptPath(null)}>remover</button>
+            </p>
+          )}
+        </div>
+      )}
 
       <label className="flex flex-col gap-1">
         <span className="text-sm font-medium">Valor (R$)</span>

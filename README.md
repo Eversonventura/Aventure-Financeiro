@@ -32,3 +32,8 @@ Dá para desfazer a importação inteira. Aplique antes a migration `20261115000
 Cada lançamento novo (lançamento rápido e importação) passa por: regra exata (`classification_rules`) → histórico (mesmo texto confirmado 3 vezes vira regra) → Claude Haiku.
 Confiança de 0,80 ou mais entra direto; abaixo disso vai para `Revisão`, com a sugestão guardada e sem alterar o DRE até alguém confirmar.
 Variáveis: `ANTHROPIC_API_KEY` e `ANTHROPIC_MODEL_HAIKU` (padrão `claude-haiku-5-5`). Aplique antes a migration `20261115000003_ai_suggestion.sql`.
+
+## Voz e foto (etapa 9)
+No lançamento rápido, o botão **Voz** transcreve no navegador (Web Speech API, ou o ditado do teclado) e o Claude Sonnet vira a frase em campos do formulário.
+O botão **Foto do cupom** reduz a imagem no celular, guarda em `receipts/{org}/{lançamento}.jpg` (bucket privado) e o Claude Sonnet lê estabelecimento, data, total e parcelas.
+Nada é salvo sozinho: a pessoa confere e toca em Salvar. Valor ilegível volta vazio. O cupom abre por link assinado de 60 segundos. Não precisa de migration nova.

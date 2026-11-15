@@ -7,7 +7,7 @@ type Tx = {
   id: string; type: "expense" | "income" | "transfer"; description: string; amount_cents: number;
   competence_date: string; cash_date: string; invoice_month: string | null; status: string;
   entity_id: string; payment_method_id: string | null; category_id: string | null;
-  installment_group_id: string | null; installment_number: number | null; transfer_pair_id: string | null; needs_review: boolean;
+  installment_group_id: string | null; installment_number: number | null; transfer_pair_id: string | null; needs_review: boolean; receipt_path: string | null;
 };
 
 const dataBR = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}`;
@@ -64,6 +64,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ e
                     <div className="text-xs text-muted/70">fatura vence {dataBR(r.cash_date)}</div>
                   )}
                   {r.needs_review && <div className="text-xs text-amber-300">Precisa de revisão</div>}
+                  {r.receipt_path && <a href={`/api/cupom?path=${encodeURIComponent(r.receipt_path)}`} target="_blank" rel="noreferrer" className="text-xs text-gold underline">Ver cupom</a>}
                 </div>
                 <div className={`shrink-0 font-semibold ${r.type === "income" ? "text-emerald-300" : ""}`}>
                   {sinal} {centsToBRL(r.amount_cents)}

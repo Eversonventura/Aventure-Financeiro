@@ -20,6 +20,10 @@ export async function POST(request: NextRequest) {
   if (!m) return NextResponse.json({ error: "Usuário sem organização." }, { status: 403 });
   if (m.role === "viewer") return NextResponse.json({ error: "Seu acesso é só de leitura." }, { status: 403 });
   const orgId = m.org_id as string;
+  // a foto do cupom só pode apontar para a pasta da própria organização
+  if (input.receipt_path && !input.receipt_path.startsWith(`${orgId}/`)) {
+    return NextResponse.json({ error: "Foto inválida." }, { status: 400 });
+  }
 
   const ids = [input.payment_method_id, input.to_payment_method_id].filter((x): x is string => !!x);
   const { data: pms } = ids.length
