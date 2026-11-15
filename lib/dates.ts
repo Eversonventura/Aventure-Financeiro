@@ -20,3 +20,6 @@ export function diffDays(a: string, b: string): number {
 
 const MESES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
 export const monthLabel = (month: string) => `${MESES[Number(month.slice(5, 7)) - 1]} de ${month.slice(0, 4)}`;
+
+/** "Novembro de 2026": só a primeira letra em maiúscula (o `capitalize` do CSS põe "De" também). */
+export const monthTitle = (month: string) => { const l = monthLabel(month); return l.charAt(0).toUpperCase() + l.slice(1); };

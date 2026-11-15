@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { monthLabel, monthStart, todayFortaleza } from "@/lib/dates";
+import { monthTitle, monthStart, todayFortaleza } from "@/lib/dates";
 import { loadDrill } from "@/lib/dre-drill";
 import { centsToBRL } from "@/lib/format";
 import { getCtx } from "@/lib/org";
@@ -18,7 +18,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
       <Link href={`/dre?mes=${mes.slice(0, 7)}`} className="text-sm text-muted">← DRE</Link>
       <div>
         <h1 className="text-2xl font-semibold">{d.title}</h1>
-        <p className="capitalize text-muted">{monthLabel(mes)} · {d.items.length} lançamento(s) · total {centsToBRL(d.total)}</p>
+        <p className="text-muted">{monthTitle(mes)} · {d.items.length} lançamento(s) · total {centsToBRL(d.total)}</p>
       </div>
       {d.notes.map((n) => <p key={n} className="rounded-xl bg-surface p-3 text-sm text-muted">{n}</p>)}
       {d.items.length === 0 ? <p className="text-muted">Nenhum lançamento nesta linha no mês.</p> : (

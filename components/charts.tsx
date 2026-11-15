@@ -80,3 +80,24 @@ export function BalanceChart({ data }: { data: { date: string; label: string; ba
     </figure>
   );
 }
+
+/** Entradas e saídas por dia do mês. */
+export function DailyChart({ data }: { data: { day: number; label: string; saida: number; entrada: number }[] }) {
+  return (
+    <figure className="flex flex-col gap-3" aria-label="Entradas e saídas por dia do mês">
+      <Legend items={[{ nome: "Saídas", cor: COR.despesa }, { nome: "Entradas", cor: COR.receita }]} />
+      <div className="h-56 w-full">
+        <ResponsiveContainer width="100%" height="100%" minWidth={0} initialDimension={{ width: 360, height: 224 }}>
+          <ComposedChart data={data} margin={{ top: 8, right: 4, bottom: 0, left: 0 }} barGap={2} barCategoryGap="20%">
+            <CartesianGrid vertical={false} stroke={GRID} />
+            <XAxis dataKey="label" tickLine={false} axisLine={{ stroke: GRID }} tick={{ fill: TEXTO, fontSize: 11 }} interval="preserveStartEnd" minTickGap={14} />
+            <YAxis tickFormatter={compactBRL} tickLine={false} axisLine={false} width={76} tick={{ fill: TEXTO, fontSize: 11 }} />
+            <Tooltip content={<Tip />} cursor={{ fill: "rgba(255,255,255,0.04)" }} labelFormatter={(l) => `Dia ${l}`} />
+            <Bar dataKey="saida" name="Saídas" fill={COR.despesa} radius={[4, 4, 0, 0]} maxBarSize={14} />
+            <Bar dataKey="entrada" name="Entradas" fill={COR.receita} radius={[4, 4, 0, 0]} maxBarSize={14} />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+    </figure>
+  );
+}

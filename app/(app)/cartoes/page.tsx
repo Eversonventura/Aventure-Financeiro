@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { monthLabel, monthStart, todayFortaleza } from "@/lib/dates";
+import { monthTitle, monthStart, todayFortaleza } from "@/lib/dates";
 import { centsToBRL } from "@/lib/format";
 import { addInvoiceMonths, cashDateFor } from "@/lib/invoice";
 import { getCtx } from "@/lib/org";
@@ -74,7 +74,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ m
         <h1 className="text-2xl font-semibold">Cartões</h1>
         <div className="flex items-center gap-3">
           <Link href={`/cartoes?mes=${ant}`} className="rounded-lg border border-line-strong px-3 py-1.5" aria-label="Fatura anterior">‹</Link>
-          <span className="min-w-36 text-center font-medium capitalize">Faturas de {monthLabel(mes)}</span>
+          <span className="min-w-36 text-center font-medium">Faturas de {monthTitle(mes)}</span>
           <Link href={`/cartoes?mes=${prox}`} className="rounded-lg border border-line-strong px-3 py-1.5" aria-label="Próxima fatura">›</Link>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { monthLabel, monthStart, todayFortaleza } from "@/lib/dates";
+import { monthTitle, monthStart, todayFortaleza } from "@/lib/dates";
 import { centsToBRL } from "@/lib/format";
 import { addInvoiceMonths } from "@/lib/invoice";
 import { groupOff, monthTotal, ruleFor, series, type OffTx } from "@/lib/fora-pj";
@@ -54,7 +54,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ m
         </div>
         <div className="flex items-center gap-3">
           <Link href={`/dre/fora-do-pj?mes=${ant}`} className="rounded-lg border border-line-strong px-3 py-1.5" aria-label="Mês anterior">‹</Link>
-          <span className="min-w-32 text-center font-medium capitalize">{monthLabel(mes)}</span>
+          <span className="min-w-32 text-center font-medium">{monthTitle(mes)}</span>
           <Link href={`/dre/fora-do-pj?mes=${prox}`} className="rounded-lg border border-line-strong px-3 py-1.5" aria-label="Próximo mês">›</Link>
         </div>
       </div>

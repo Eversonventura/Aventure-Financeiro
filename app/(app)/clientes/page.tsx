@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ContaRow, type ContaView } from "@/components/conta-row";
 import { RecordForm, type Field } from "@/components/config/crud";
 import { summarizeClients, type CRule, type CTx } from "@/lib/clientes";
-import { diffDays, monthEnd, monthLabel, monthStart, todayFortaleza } from "@/lib/dates";
+import { diffDays, monthEnd, monthTitle, monthStart, todayFortaleza } from "@/lib/dates";
 import { centsToBRL } from "@/lib/format";
 import { addInvoiceMonths } from "@/lib/invoice";
 import { getCtx } from "@/lib/org";
@@ -57,7 +57,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ m
         <h1 className="text-2xl font-semibold">Clientes</h1>
         <div className="flex items-center gap-3">
           <Link href={`/clientes?mes=${ant}`} className="rounded-lg border border-line-strong px-3 py-1.5" aria-label="Mês anterior">‹</Link>
-          <span className="min-w-32 text-center font-medium capitalize">{monthLabel(mes)}</span>
+          <span className="min-w-32 text-center font-medium">{monthTitle(mes)}</span>
           <Link href={`/clientes?mes=${prox}`} className="rounded-lg border border-line-strong px-3 py-1.5" aria-label="Próximo mês">›</Link>
         </div>
       </div>

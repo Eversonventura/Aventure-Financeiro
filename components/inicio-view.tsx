@@ -1,98 +1,83 @@
 import Link from "next/link";
-import { ContaRow, type ContaView } from "@/components/conta-row";
+import { DailyChart } from "@/components/charts";
 import { Orbits } from "@/components/orbits";
-import { monthLabel } from "@/lib/dates";
+import { TxList } from "@/components/tx-list";
+import { monthTitle } from "@/lib/dates";
 import { centsToBRL } from "@/lib/format";
-
-const pct = (parte: number, total: number) => (total > 0 ? Math.min(100, Math.round((parte / total) * 100)) : 0);
-
-const ATALHOS = [
-  { href: "/lancamentos/novo", tag: "Comece aqui", titulo: "Lançar", desc: "Valor, meio e pronto em segundos", cor: "bg-brand-deep text-white" },
-  { href: "/contas", tag: "Vencimentos", titulo: "Contas do mês", desc: "O que pagar e o que receber", cor: "bg-gold text-canvas" },
-  { href: "/painel", tag: "Visão geral", titulo: "Painel", desc: "Receita, despesa e resultado do mês", cor: "bg-surface text-white" },
-  { href: "/fluxo", tag: "Projeção", titulo: "Fluxo de caixa", desc: "Os próximos 6 meses, dia a dia", cor: "bg-surface text-white" },
-  { href: "/cartoes", tag: "Cartões", titulo: "Faturas", desc: "Parcelas e assinaturas por cartão", cor: "bg-surface text-white" },
-  { href: "/dre", tag: "Resultado", titulo: "DRE", desc: "Quanto a Aventure realmente lucra", cor: "bg-surface text-white" },
-  { href: "/configuracoes/recorrencias", tag: "Automático", titulo: "Recorrências", desc: "Assinaturas e contas fixas", cor: "bg-surface text-white" },
-];
+import { addInvoiceMonths } from "@/lib/invoice";
+import type { DayPoint, HomeTx, Totals } from "@/lib/inicio";
 
 export type InicioData = {
-  mes: string; aPagar: number; aReceber: number; pagoCents: number; recebidoCents: number;
-  atrasadas: number; revisar: number; proximas: ContaView[];
+  mes: string; // AAAA-MM-01
+  totals: Totals;
+  daily: DayPoint[];
+  txs: HomeTx[];
+  hasMore: boolean;
+  aPagar: number; aReceber: number; atrasadas: number; revisar: number;
 };
 
-export function InicioView({ mes, aPagar, aReceber, pagoCents, recebidoCents, atrasadas, revisar, proximas }: InicioData) {
+/** Início: o mês em números, um gráfico por dia e a tabela de todos os lançamentos. No celular não tem banner. */
+export function InicioView({ mes, totals, daily, txs, hasMore, aPagar, aReceber, atrasadas, revisar }: InicioData) {
+  const ant = addInvoiceMonths(mes, -1).slice(0, 7);
+  const prox = addInvoiceMonths(mes, 1).slice(0, 7);
   return (
-    <div className="-mx-4 -my-6 md:-mx-11 md:-my-8">
-      {/* topo */}
-      <section className="relative overflow-hidden border-b border-line px-4 py-10 md:px-11 md:py-14">
-        <Orbits className="top-0 right-0 hidden h-full w-3/4 md:block" />
+    <div className="md:-mx-11 md:-my-8">
+      {/* banner: só no computador */}
+      <section className="relative hidden overflow-hidden border-b border-line px-11 py-12 md:block">
+        <Orbits className="top-0 right-0 h-full w-3/4" />
         <div className="relative max-w-2xl">
-          <span className="inline-block rounded-full bg-brand px-4 py-1.5 text-sm font-semibold text-white">Aventure Comunicação · uso interno</span>
-          <h1 className="mt-5 font-heading text-4xl leading-[1.05] font-bold md:text-6xl">Bem-vindo ao<br />Aventure Financeiro</h1>
-          <p className="mt-4 max-w-xl text-lg text-muted">Lance em segundos, acompanhe o mês e saiba quanto a empresa e cada pessoa realmente gastam.</p>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Link href="/lancamentos/novo" className="rounded-full bg-gold px-6 py-3 font-semibold text-canvas hover:brightness-110">Novo lançamento</Link>
-            <Link href="/contas" className="rounded-full border border-line-strong px-6 py-3 font-medium hover:bg-surface">Ver contas do mês</Link>
-          </div>
+          <h1 className="font-heading text-5xl leading-[1.05] font-bold">Bem-vindo ao<br />Aventure Financeiro</h1>
+          <p className="mt-3 max-w-xl text-lg text-muted">Lance em segundos e acompanhe o mês: tudo o que entrou e saiu, no caixa único da família e da empresa.</p>
         </div>
       </section>
 
-      <div className="flex flex-col gap-10 px-4 py-8 md:px-11">
-        {/* negócio no mês */}
-        <section className="flex flex-col gap-4">
-          <h2 className="text-xl font-semibold">Seu caixa em {monthLabel(mes)}</h2>
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="rounded-3xl border border-line bg-surface p-6">
-              <div className="text-sm text-muted">A pagar este mês</div>
-              <div className="mt-2 font-heading text-4xl font-bold">{centsToBRL(aPagar)}</div>
-              <div className="mt-4 h-2 overflow-hidden rounded-full bg-surface-2"><div className="h-full rounded-full bg-brand" style={{ width: `${pct(pagoCents, pagoCents + aPagar)}%` }} /></div>
-              <div className="mt-3 text-sm text-muted">{atrasadas > 0 ? `${atrasadas} conta(s) vencida(s)` : "Nenhuma conta vencida"} · já pago {centsToBRL(pagoCents)}</div>
-            </div>
-            <div className="rounded-3xl border border-line bg-surface p-6">
-              <div className="text-sm text-muted">A receber este mês</div>
-              <div className="mt-2 font-heading text-4xl font-bold text-emerald-300">{centsToBRL(aReceber)}</div>
-              <div className="mt-4 h-2 overflow-hidden rounded-full bg-surface-2"><div className="h-full rounded-full bg-gold" style={{ width: `${pct(recebidoCents, recebidoCents + aReceber)}%` }} /></div>
-              <div className="mt-3 text-sm text-muted">Já recebido {centsToBRL(recebidoCents)}</div>
-            </div>
-            <div className="rounded-3xl border border-line bg-surface p-6">
-              <div className="text-sm text-muted">Fila de revisão</div>
-              <div className="mt-2 flex items-baseline gap-2"><span className="font-heading text-4xl font-bold">{revisar}</span><span className="text-muted">sem categoria</span></div>
-              <div className="mt-4 text-sm text-muted">Lançamentos que a categoria ainda não foi escolhida.</div>
-              <Link href="/revisao" className="mt-2 inline-block text-sm font-medium text-gold underline">Revisar agora</Link>
-            </div>
+      <div className="mx-auto flex max-w-3xl flex-col gap-6 md:px-11 md:py-8">
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="text-2xl font-semibold md:hidden">Início</h1>
+          <h2 className="hidden text-xl font-semibold md:block">Lançamentos do mês</h2>
+          <div className="flex items-center gap-2">
+            <Link href={`/?mes=${ant}`} className="rounded-lg border border-line-strong px-3 py-1.5" aria-label="Mês anterior">‹</Link>
+            <span className="min-w-28 text-center text-sm font-medium">{monthTitle(mes)}</span>
+            <Link href={`/?mes=${prox}`} className="rounded-lg border border-line-strong px-3 py-1.5" aria-label="Próximo mês">›</Link>
           </div>
-        </section>
+        </div>
 
-        {/* próximos vencimentos */}
-        {proximas.length > 0 && (
-          <section className="flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Vence em até 7 dias</h2>
-              <Link href="/contas" className="text-sm font-medium text-gold underline">Ver tudo</Link>
-            </div>
-            <ul className="grid gap-3 md:grid-cols-2">{proximas.map((c) => <ContaRow key={c.id} c={c} mes={mes.slice(0, 7)} />)}</ul>
-          </section>
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-3 md:gap-4">
+          <div className="rounded-2xl border border-line bg-surface p-3 md:p-4">
+            <div className="text-xs text-muted md:text-sm">Entradas</div>
+            <div className="mt-1 font-heading text-xl font-bold whitespace-nowrap text-emerald-300 md:text-2xl">{centsToBRL(totals.entradas)}</div>
+          </div>
+          <div className="rounded-2xl border border-line bg-surface p-3 md:p-4">
+            <div className="text-xs text-muted md:text-sm">Saídas</div>
+            <div className="mt-1 font-heading text-xl font-bold whitespace-nowrap md:text-2xl">{centsToBRL(totals.saidas)}</div>
+          </div>
+          <div className="col-span-2 rounded-2xl border border-line bg-surface p-3 md:col-span-1 md:p-4">
+            <div className="text-xs text-muted md:text-sm">Saldo do mês</div>
+            <div className={`mt-1 font-heading text-xl font-bold whitespace-nowrap md:text-2xl ${totals.saldo < 0 ? "text-red-400" : ""}`}>{centsToBRL(totals.saldo)}</div>
+          </div>
+        </div>
+
+        {(aPagar > 0 || aReceber > 0 || revisar > 0) && (
+          <p className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted">
+            {aPagar > 0 && <Link href="/contas" className="hover:underline">A pagar {centsToBRL(aPagar)}{atrasadas > 0 ? ` (${atrasadas} vencida${atrasadas > 1 ? "s" : ""})` : ""}</Link>}
+            {aReceber > 0 && <Link href="/contas" className="hover:underline">A receber {centsToBRL(aReceber)}</Link>}
+            {revisar > 0 && <Link href="/revisao" className="text-gold hover:underline">{revisar} para revisar</Link>}
+          </p>
         )}
 
-        {/* atalhos */}
-        <section className="flex flex-col gap-4">
-          <h2 className="text-xl font-semibold">Atalhos</h2>
-          <div className="-mx-4 flex gap-4 overflow-x-auto px-4 pb-2 md:mx-0 md:px-0">
-            {ATALHOS.map((a) => (
-              <Link key={a.href} href={a.href} className="group w-60 shrink-0">
-                <div className={`relative flex h-44 flex-col justify-end overflow-hidden rounded-3xl border border-line p-5 ${a.cor}`}>
-                  <Orbits className="right-0 bottom-0 h-full w-full opacity-70" />
-                  <div className="relative text-[11px] font-semibold tracking-widest uppercase opacity-80">{a.tag}</div>
-                  <div className="relative font-display text-3xl leading-none uppercase">{a.titulo}</div>
-                </div>
-                <p className="mt-2 text-sm text-muted">{a.desc}</p>
-              </Link>
-            ))}
-          </div>
+        <section className="rounded-3xl border border-line bg-surface p-4">
+          <h2 className="mb-3 font-semibold">Por dia</h2>
+          {totals.count === 0 ? <p className="py-6 text-center text-muted">Nenhum lançamento neste mês.</p> : <DailyChart data={daily} />}
         </section>
 
-        <p className="pt-4 text-center text-xs text-muted">Aventure Financeiro · um sistema Aventure Comunicação</p>
+        <section className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <h2 className="font-semibold">Lançamentos <span className="font-normal text-muted">({totals.count})</span></h2>
+            <Link href="/lancamentos/novo" className="rounded-lg bg-gold px-4 py-2 text-sm font-semibold text-canvas">Novo</Link>
+          </div>
+          {txs.length === 0 ? <p className="text-muted">Toque em “Novo” (ou no +) para fazer o primeiro lançamento.</p> : <TxList txs={txs} />}
+          {hasMore && <Link href="/lancamentos" className="text-center text-sm text-gold underline">Ver todos os lançamentos</Link>}
+        </section>
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ContaRow } from "@/components/conta-row";
-import { monthLabel, monthStart, todayFortaleza } from "@/lib/dates";
+import { monthLabel, monthTitle, monthStart, todayFortaleza } from "@/lib/dates";
 import { loadContasDoMes } from "@/lib/contas";
 import { centsToBRL } from "@/lib/format";
 import { addInvoiceMonths } from "@/lib/invoice";
@@ -21,7 +21,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ m
     <div className="mx-auto flex max-w-2xl flex-col gap-4">
       <div className="flex items-center justify-between">
         <Link href={`/contas?mes=${ant}`} className="rounded-lg border border-line-strong px-3 py-1.5" aria-label="Mês anterior">‹</Link>
-        <h1 className="text-xl font-semibold capitalize">{monthLabel(mes)}</h1>
+        <h1 className="text-xl font-semibold">{monthTitle(mes)}</h1>
         <Link href={`/contas?mes=${prox}`} className="rounded-lg border border-line-strong px-3 py-1.5" aria-label="Próximo mês">›</Link>
       </div>
       {sp.erro && <p role="alert" className="rounded-lg bg-red-500/10 p-3 text-red-300">{sp.erro}</p>}

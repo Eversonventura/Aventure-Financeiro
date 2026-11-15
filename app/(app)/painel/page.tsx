@@ -2,7 +2,7 @@ import Link from "next/link";
 import { MonthlyChart } from "@/components/charts";
 import { byMonth } from "@/lib/cashflow";
 import { loadContasDoMes } from "@/lib/contas";
-import { monthEnd, monthLabel, monthStart, todayFortaleza } from "@/lib/dates";
+import { monthEnd, monthTitle, monthStart, todayFortaleza } from "@/lib/dates";
 import { loadFlow } from "@/lib/flow-data";
 import { centsToBRL } from "@/lib/format";
 import { addInvoiceMonths } from "@/lib/invoice";
@@ -60,7 +60,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ m
         <h1 className="text-2xl font-semibold">Painel</h1>
         <div className="flex items-center gap-3">
           <Link href={`/painel?mes=${ant}`} className="rounded-lg border border-line-strong px-3 py-1.5" aria-label="Mês anterior">‹</Link>
-          <span className="min-w-36 text-center font-medium capitalize">{monthLabel(mes)}</span>
+          <span className="min-w-36 text-center font-medium">{monthTitle(mes)}</span>
           <Link href={`/painel?mes=${prox}`} className="rounded-lg border border-line-strong px-3 py-1.5" aria-label="Próximo mês">›</Link>
         </div>
       </div>

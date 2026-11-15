@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { DreTable, pctTxt } from "@/components/dre-table";
-import { monthLabel, monthStart, todayFortaleza } from "@/lib/dates";
+import { monthTitle, monthStart, todayFortaleza } from "@/lib/dates";
 import { loadDreInput } from "@/lib/dre-data";
 import { dreTable } from "@/lib/dre";
 import { centsToBRL } from "@/lib/format";
@@ -35,7 +35,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ m
         </div>
         <div className="flex items-center gap-3">
           <Link href={`/dre?mes=${ant}`} className="rounded-lg border border-line-strong px-3 py-1.5" aria-label="Mês anterior">‹</Link>
-          <span className="min-w-36 text-center font-medium capitalize">{monthLabel(mes)}</span>
+          <span className="min-w-36 text-center font-medium">{monthTitle(mes)}</span>
           <Link href={`/dre?mes=${prox}`} className="rounded-lg border border-line-strong px-3 py-1.5" aria-label="Próximo mês">›</Link>
         </div>
       </div>
