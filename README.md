@@ -59,3 +59,9 @@ Variáveis na Vercel: `ASAAS_API_KEY`, `ASAAS_WEBHOOK_TOKEN` (e, para testar no 
 Webhook do Asaas apontando para `https://<seu-dominio>/api/webhooks/asaas`, com o mesmo token no cabeçalho `asaas-access-token`.
 Cobrança recebida ou confirmada baixa a mensalidade do cliente (valor real e data do dinheiro, tarifa registrada); o id do evento garante que repetir não duplica; estorno desfaz.
 `/api/cron/asaas` roda todo dia às 05:30 (Fortaleza) e baixa o que o webhook possa ter perdido. Tela: Configurações → Integração Asaas. Aplique antes a migration `20261115000007_asaas.sql`.
+
+## Analista financeiro (etapa 12)
+Todo dia 1 (06:00 em Fortaleza, `/api/cron/analista`) o Claude Opus escreve o relatório do mês anterior (`ANTHROPIC_MODEL_OPUS`, padrão `claude-opus-5-5`).
+Ele recebe só **dados agregados** (DRE, gasto por categoria, entidade e pessoa, assinaturas, alertas), nunca a lista de lançamentos. A resposta é validada por Zod antes de salvar em `ai_insights`.
+O chat usa 4 ferramentas de leitura pré-definidas (`gasto_por_categoria`, `dre_do_mes`, `fluxo_projetado`, `lancamentos_filtrados`), sem SQL livre, sempre com a sessão do usuário e filtrando pela organização (`ANTHROPIC_MODEL_CHAT`, padrão Sonnet).
+Aplique antes a migration `20261115000008_ai_insights_unique.sql`. Tela: Analista IA.

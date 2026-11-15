@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState, useSyncExternalStore, type ReactNode } from "react";
 import {
   IconBell, IconCalendar, IconCard, IconChart, IconChevronLeft, IconChevronRight, IconClose,
-  IconBank, IconCheck, IconFlow, IconGrid, IconUsers, IconHome, IconList, IconLogout, IconMenu, IconSearch, IconSettings, IconUpload,
+  IconBank, IconCheck, IconSpark, IconFlow, IconGrid, IconUsers, IconHome, IconList, IconLogout, IconMenu, IconSearch, IconSettings, IconUpload,
 } from "@/components/icons";
 import { Logo } from "@/components/logo";
 
@@ -20,6 +20,7 @@ const ITENS = [
   { href: "/cartoes", label: "Cartões", Icon: IconCard },
   { href: "/emprestimos", label: "Empréstimos e consórcios", Icon: IconBank, curto: "Empréstimos" },
   { href: "/dre", label: "DRE", Icon: IconChart },
+  { href: "/analista", label: "Analista IA", Icon: IconSpark },
   { href: "/importacoes", label: "Importações", Icon: IconUpload },
   { href: "/configuracoes", label: "Configurações", Icon: IconSettings, curto: "Config." },
 ];
