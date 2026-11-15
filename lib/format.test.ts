@@ -29,3 +29,14 @@ describe("dinheiro", () => {
     expect(parsePercent("x")).toBeNaN();
   });
 });
+
+import { compactBRL } from "./format";
+describe("valor compacto", () => {
+  it("abrevia para eixos de gráfico", () => {
+    expect(compactBRL(30000)).toBe("R$ 300");
+    expect(compactBRL(1200000)).toBe("R$ 12 mil");
+    expect(compactBRL(125000000)).toBe("R$ 1,3 mi");
+    expect(compactBRL(-250000)).toBe("-R$ 2,5 mil");
+    expect(compactBRL(0)).toBe("R$ 0");
+  });
+});

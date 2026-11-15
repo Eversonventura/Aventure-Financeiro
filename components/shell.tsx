@@ -5,19 +5,22 @@ import { usePathname } from "next/navigation";
 import { useState, useSyncExternalStore, type ReactNode } from "react";
 import {
   IconBell, IconCalendar, IconCard, IconChart, IconChevronLeft, IconChevronRight, IconClose,
-  IconHome, IconList, IconLogout, IconMenu, IconSearch, IconSettings,
+  IconFlow, IconGrid, IconHome, IconList, IconLogout, IconMenu, IconSearch, IconSettings,
 } from "@/components/icons";
 import { Logo } from "@/components/logo";
 
 const ITENS = [
   { href: "/", label: "Início", Icon: IconHome },
+  { href: "/painel", label: "Painel", Icon: IconGrid },
+  { href: "/fluxo", label: "Fluxo de caixa", Icon: IconFlow, curto: "Fluxo" },
   { href: "/lancamentos", label: "Lançamentos", Icon: IconList },
   { href: "/contas", label: "Contas do mês", Icon: IconCalendar, curto: "Contas" },
   { href: "/cartoes", label: "Cartões", Icon: IconCard },
   { href: "/dre", label: "DRE", Icon: IconChart },
   { href: "/configuracoes", label: "Configurações", Icon: IconSettings, curto: "Config." },
 ];
-const ABAS = ITENS.slice(0, 5); // barra inferior do celular; o resto fica na gaveta
+const ABAS = ["/", "/lancamentos", "/contas", "/cartoes", "/painel"]
+  .map((h) => ITENS.find((i) => i.href === h)!); // barra inferior do celular; o resto fica na gaveta
 
 // preferência "menu recolhido" guardada no aparelho
 const KEY = "caixa:menu-recolhido";

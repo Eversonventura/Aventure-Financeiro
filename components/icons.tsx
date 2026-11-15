@@ -20,3 +20,5 @@ export const IconMenu = (p: P) => (<svg {...base(p)}><path d="M4 7h16M4 12h16M4 
 export const IconClose = (p: P) => (<svg {...base(p)}><path d="M6 6l12 12M18 6 6 18" /></svg>);
 export const IconLogout = (p: P) => (<svg {...base(p)}><path d="M9 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3M16 8l4 4-4 4M20 12H9" /></svg>);
 export const IconRepeat = (p: P) => (<svg {...base(p)}><path d="M17 3l3 3-3 3M4 11V9a3 3 0 0 1 3-3h13M7 21l-3-3 3-3M20 13v2a3 3 0 0 1-3 3H4" /></svg>);
+export const IconGrid = (p: P) => (<svg {...base(p)}><rect x="3.5" y="3.5" width="7" height="7" rx="1.5" /><rect x="13.5" y="3.5" width="7" height="7" rx="1.5" /><rect x="3.5" y="13.5" width="7" height="7" rx="1.5" /><rect x="13.5" y="13.5" width="7" height="7" rx="1.5" /></svg>);
+export const IconFlow = (p: P) => (<svg {...base(p)}><path d="M3 17c3 0 3-10 6-10s3 10 6 10 3-6 6-6" /><path d="M3 21h18" /></svg>);

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { brlToCents, parsePercent } from "@/lib/format";
+import { isValidDate } from "@/lib/invoice";
 
 export const ENTITY_KINDS = { pj: "Empresa (PJ)", pf: "Pessoa (PF)", shared: "Compartilhado" } as const;
 export const PM_KINDS = { credit_card: "Cartão de crédito", bank_account: "Conta bancária", pix: "Pix", cash: "Dinheiro" } as const;
@@ -96,6 +97,29 @@ export const settingsSchema = z.object({
     }
     return Math.round(n * 100) / 10000; // 6,5% -> 0.0650
   }),
+  // saldo em contas hoje: ponto de partida do fluxo de caixa projetado (pode ser negativo)
+  opening_balance_cents: z.string().optional().transform((s, ctx) => {
+    const raw = (s ?? "").trim();
+    if (raw === "") return 0;
+    const neg = raw.startsWith("-");
+    const c = brlToCents(neg ? raw.slice(1) : raw);
+    if (c == null || Number.isNaN(c)) {
+      ctx.addIssue({ code: "custom", message: "Saldo inválido. Use o formato 1.500,00." });
+      return z.NEVER;
+    }
+    return neg ? -c : c;
+  }),
+  opening_balance_date: z.string().optional().transform((s, ctx) => {
+    const raw = (s ?? "").trim();
+    if (raw === "") return null;
+    if (!isValidDate(raw)) {
+      ctx.addIssue({ code: "custom", message: "Data do saldo inválida." });
+      return z.NEVER;
+    }
+    return raw;
+  }),
+}).refine((v) => v.opening_balance_cents === 0 || v.opening_balance_date !== null, {
+  error: "Informe a data a que o saldo se refere.",
 });
 
 /** Lê os campos de um FormData como strings (campos ausentes viram ""). */

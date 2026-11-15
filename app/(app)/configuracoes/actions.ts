@@ -70,12 +70,10 @@ export async function saveClient(fd: FormData) {
 export async function deleteClient(fd: FormData) { await remove("clients", "clientes", fd); }
 
 export async function saveSettings(fd: FormData) {
-  const parsed = settingsSchema.safeParse({ simples_effective_rate: String(fd.get("simples_effective_rate") ?? "") });
+  const parsed = settingsSchema.safeParse(formToObject(fd, ["simples_effective_rate", "opening_balance_cents", "opening_balance_date"]));
   if (!parsed.success) back("geral", parsed.error.issues[0].message);
   const { supabase, orgId } = await getCtx();
-  const { error } = await supabase
-    .from("org_settings")
-    .upsert({ org_id: orgId, simples_effective_rate: parsed.data.simples_effective_rate });
+  const { error } = await supabase.from("org_settings").upsert({ org_id: orgId, ...parsed.data });
   back("geral", error ? friendly(error) : undefined);
 }
 

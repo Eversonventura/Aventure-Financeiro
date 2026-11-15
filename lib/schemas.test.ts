@@ -62,3 +62,17 @@ describe("regra recorrente", () => {
     expect(recurringRuleSchema.safeParse(r({ start_month: "" })).success).toBe(false);
   });
 });
+
+describe("saldo de abertura do caixa", () => {
+  const cfg = (o: Record<string, string> = {}) => ({ simples_effective_rate: "", opening_balance_cents: "", opening_balance_date: "", ...o });
+  it("aceita saldo positivo, negativo e vazio", () => {
+    expect(settingsSchema.parse(cfg({ opening_balance_cents: "1.500,50", opening_balance_date: "2026-11-14" }))).toMatchObject({ opening_balance_cents: 150050, opening_balance_date: "2026-11-14" });
+    expect(settingsSchema.parse(cfg({ opening_balance_cents: "-200,00", opening_balance_date: "2026-11-14" })).opening_balance_cents).toBe(-20000);
+    expect(settingsSchema.parse(cfg())).toMatchObject({ opening_balance_cents: 0, opening_balance_date: null });
+  });
+  it("exige a data quando há saldo e rejeita valor ou data inválidos", () => {
+    expect(settingsSchema.safeParse(cfg({ opening_balance_cents: "100,00" })).success).toBe(false);
+    expect(settingsSchema.safeParse(cfg({ opening_balance_cents: "abc", opening_balance_date: "2026-11-14" })).success).toBe(false);
+    expect(settingsSchema.safeParse(cfg({ opening_balance_cents: "100,00", opening_balance_date: "2026-02-30" })).success).toBe(false);
+  });
+});

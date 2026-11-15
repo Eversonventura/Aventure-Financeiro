@@ -33,3 +33,14 @@ export function parsePercent(input: string | null | undefined): number | null {
 export function percentToInput(n: number | null | undefined): string {
   return n == null ? "" : String(n).replace(".", ",");
 }
+
+/** Valor curto para eixos de gráfico: R$ 300 · R$ 12 mil · R$ 1,2 mi. */
+export function compactBRL(cents: number): string {
+  const reais = cents / 100;
+  const abs = Math.abs(reais);
+  const neg = reais < 0 ? "-" : "";
+  const n = (v: number) => v.toFixed(1).replace(".0", "").replace(".", ",");
+  if (abs >= 1_000_000) return `${neg}R$ ${n(abs / 1_000_000)} mi`;
+  if (abs >= 1_000) return `${neg}R$ ${n(abs / 1_000)} mil`;
+  return `${neg}R$ ${Math.round(abs)}`;
+}

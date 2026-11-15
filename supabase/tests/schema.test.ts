@@ -124,3 +124,59 @@ describe("recorrências: gerar duas vezes não duplica", () => {
     expect(await as(U.a, `select 1 from transactions where external_id='${ext}'`)).toHaveLength(1);
   });
 });
+
+describe("views com dados: faturas, fluxo, retiradas e rateio da casa", () => {
+  const E = { ve: "20000000-0000-4000-8000-0000000000c1", casa: "20000000-0000-4000-8000-0000000000c2" };
+  const PM = { cartaoVe: "60000000-0000-4000-8000-000000000001", cartaoPj: "60000000-0000-4000-8000-000000000002" };
+  const CAT = { casa: "30000000-0000-4000-8000-0000000000c1", mercado: "30000000-0000-4000-8000-0000000000c2" };
+  const tx = (o: { type: string; cents: number; ent: string; pm?: string; cat?: string; comp: string; cash: string; inv?: string; status?: string; paid?: number }) =>
+    `insert into transactions (org_id,type,status,description,amount_cents,paid_amount_cents,competence_date,cash_date,invoice_month,entity_id,payment_method_id,category_id)
+     values ('${O.a}','${o.type}','${o.status ?? "pending"}','t',${o.cents},${o.paid ?? "null"},'${o.comp}','${o.cash}',${o.inv ? `'${o.inv}'` : "null"},'${o.ent}',${o.pm ? `'${o.pm}'` : "null"},${o.cat ? `'${o.cat}'` : "null"});`;
+
+  beforeAll(async () => {
+    await db.exec(`reset role;
+      insert into entities (id,org_id,name,kind) values ('${E.ve}','${O.a}','Ventura','pf'),('${E.casa}','${O.a}','Casa','shared');
+      insert into payment_methods (id,org_id,name,kind,owner_entity_id,closing_day,due_day) values
+        ('${PM.cartaoVe}','${O.a}','Nubank Ventura','credit_card','${E.ve}',10,18),
+        ('${PM.cartaoPj}','${O.a}','Cartão Asaas PJ','credit_card','${EA}',10,18);
+      insert into categories (id,org_id,name,direction,dre_line,pj_share_pct) values
+        ('${CAT.casa}','${O.a}','Contas da casa','out','none',30),('${CAT.mercado}','${O.a}','Mercado','out','none',0);
+      ${tx({ type: "expense", cents: 10000, ent: EA, pm: PM.cartaoVe, comp: "2026-12-01", cash: "2026-12-18", inv: "2026-12-01" })}
+      ${tx({ type: "expense", cents: 25000, ent: E.ve, pm: PM.cartaoVe, cat: CAT.mercado, comp: "2026-12-02", cash: "2026-12-18", inv: "2026-12-01" })}
+      ${tx({ type: "income", cents: 5000, ent: E.ve, pm: PM.cartaoVe, comp: "2026-12-03", cash: "2026-12-18", inv: "2026-12-01" })}
+      ${tx({ type: "expense", cents: 40000, ent: E.ve, pm: PM.cartaoPj, comp: "2026-12-04", cash: "2026-12-18", inv: "2026-12-01" })}
+      ${tx({ type: "expense", cents: 100000, ent: E.casa, cat: CAT.casa, comp: "2026-12-05", cash: "2026-12-05", status: "paid", paid: 120000 })}
+      ${tx({ type: "income", cents: 300000, ent: EA, comp: "2026-12-10", cash: "2026-12-10" })}`);
+  });
+
+  it("v_card_invoices: total e divisão PJ/PF da fatura (estorno abate)", async () => {
+    const r = await as(U.a, `select payment_method, total_cents::int t, pj_cents::int pj, pf_cents::int pf, items from v_card_invoices where invoice_month='2026-12-01' order by payment_method`);
+    expect(r).toEqual([
+      { payment_method: "Cartão Asaas PJ", t: 40000, pj: 0, pf: 40000, items: 1 },
+      { payment_method: "Nubank Ventura", t: 30000, pj: 10000, pf: 20000, items: 3 },
+    ]);
+  });
+  it("v_settlements: gasto pessoal no cartão da Aventure é retirada; gasto da Aventure em cartão pessoal é reembolso", async () => {
+    const r = await as(U.a, `select kind, entity_id, amount_cents::int a from v_settlements where month='2026-12-01' order by kind`);
+    expect(r).toEqual([
+      { kind: "reimbursement_due", entity_id: E.ve, a: 10000 },
+      { kind: "withdrawal", entity_id: E.ve, a: 40000 },
+    ]);
+  });
+  it("v_dre_monthly: o rateio da casa leva 30% para Despesas de estrutura, usando o valor real pago", async () => {
+    const r = await as(U.a, `select dre_line, amount_cents::int a from v_dre_monthly where month='2026-12-01' order by dre_line`);
+    expect(r).toContainEqual({ dre_line: "structure_expenses", a: 36000 }); // 30% de 120.000 (pago)
+  });
+  it("v_cash_flow: entradas, saídas e saldo acumulado por dia de caixa", async () => {
+    const r = await as(U.a, `select to_char(cash_date,'MM-DD') d, inflow_cents::int i, outflow_cents::int o, (cumulative_net_cents - lag(cumulative_net_cents, 1, 0::numeric) over (order by cash_date))::int step
+      from v_cash_flow where cash_date >= '2026-12-01' order by cash_date`);
+    expect(r).toEqual([
+      { d: "12-05", i: 0, o: 120000, step: expect.any(Number) },
+      { d: "12-10", i: 300000, o: 0, step: expect.any(Number) },
+      { d: "12-18", i: 5000, o: 75000, step: expect.any(Number) },
+    ]);
+    const cum = await as(U.a, `select cumulative_net_cents::int c from v_cash_flow where cash_date <= '2026-12-18' order by cash_date desc limit 1`);
+    const antes = await as(U.a, `select cumulative_net_cents::int c from v_cash_flow where cash_date <= '2026-11-30' order by cash_date desc limit 1`);
+    expect((cum[0].c as number) - (antes[0].c as number)).toBe(300000 + 5000 - 120000 - 75000);
+  });
+});

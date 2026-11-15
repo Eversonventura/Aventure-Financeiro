@@ -9,6 +9,8 @@ const pct = (parte: number, total: number) => (total > 0 ? Math.min(100, Math.ro
 const ATALHOS = [
   { href: "/lancamentos/novo", tag: "Comece aqui", titulo: "Lançar", desc: "Valor, meio e pronto em segundos", cor: "bg-brand-deep text-white" },
   { href: "/contas", tag: "Vencimentos", titulo: "Contas do mês", desc: "O que pagar e o que receber", cor: "bg-gold text-canvas" },
+  { href: "/painel", tag: "Visão geral", titulo: "Painel", desc: "Receita, despesa e resultado do mês", cor: "bg-surface text-white" },
+  { href: "/fluxo", tag: "Projeção", titulo: "Fluxo de caixa", desc: "Os próximos 6 meses, dia a dia", cor: "bg-surface text-white" },
   { href: "/cartoes", tag: "Cartões", titulo: "Faturas", desc: "Parcelas e assinaturas por cartão", cor: "bg-surface text-white" },
   { href: "/dre", tag: "Resultado", titulo: "DRE", desc: "Quanto a Aventure realmente lucra", cor: "bg-surface text-white" },
   { href: "/configuracoes/recorrencias", tag: "Automático", titulo: "Recorrências", desc: "Assinaturas e contas fixas", cor: "bg-surface text-white" },
