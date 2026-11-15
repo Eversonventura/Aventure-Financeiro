@@ -2,6 +2,7 @@ import { PGlite } from "@electric-sql/pglite";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
+import { invoiceMonthFor } from "../../lib/invoice";
 
 const MIG = join(__dirname, "../migrations");
 const U = { a: "00000000-0000-0000-0000-00000000000a", b: "00000000-0000-0000-0000-00000000000b", v: "00000000-0000-0000-0000-0000000000c1" };
@@ -98,5 +99,16 @@ describe("invoice_month_for / cash_date_for", () => {
   it("vencimento 31 vira o último dia do mês", async () => {
     const r = await db.query<{ d: Date }>(`select cash_date_for('2027-02-01',31) d`);
     expect(r.rows[0].d.toISOString().slice(0, 10)).toBe("2027-02-28");
+  });
+});
+
+describe("paridade TypeScript x SQL (invoice_month_for)", () => {
+  const combos: [number, number][] = [[13, 20], [8, 15], [18, 25], [10, 18], [29, 6], [31, 10], [30, 5], [1, 1], [15, 15]];
+  it.each(combos)("fecha %i, vence %i em todas as datas de 2026 e 2027", async (closing, due) => {
+    const { rows } = await db.query<{ d: string; m: string }>(
+      `select to_char(d, 'YYYY-MM-DD') d, to_char(invoice_month_for(d::date, ${closing}, ${due}), 'YYYY-MM-DD') m
+       from generate_series('2026-01-01'::date, '2027-12-31'::date, interval '1 day') d`);
+    expect(rows).toHaveLength(730);
+    for (const r of rows) expect(invoiceMonthFor(r.d, closing, due), `${r.d}`).toBe(r.m);
   });
 });

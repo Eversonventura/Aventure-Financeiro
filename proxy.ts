@@ -31,6 +31,9 @@ export async function proxy(request: NextRequest) {
   const publica = PUBLICAS.some((p) => pathname.startsWith(p));
 
   if (!user && !publica) {
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json({ error: "Sessão expirada." }, { status: 401 });
+    }
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
