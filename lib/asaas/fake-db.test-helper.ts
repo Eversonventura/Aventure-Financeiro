@@ -17,7 +17,7 @@ export function fakeSupabase(seed: Record<string, Row[]>, unique: Record<string,
     let single = false;
     let lim: number | undefined;
     let returning = false;
-    let inserted: Row[] = [];
+    const inserted: Row[] = [];
 
     const conflict = (row: Row, cols: string[]) => all().find((r) => cols.every((c) => r[c] === row[c] && row[c] != null));
     const violates = (row: Row) => (unique[table] ?? []).some((cols) => conflict(row, cols));
