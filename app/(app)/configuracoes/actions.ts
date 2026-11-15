@@ -6,10 +6,10 @@ import type { ZodType } from "zod";
 import { getCtx } from "@/lib/org";
 import {
   categorySchema, clientSchema, entitySchema, formToObject,
-  paymentMethodSchema, personSchema, settingsSchema,
+  paymentMethodSchema, personSchema, recurringRuleSchema, settingsSchema,
 } from "@/lib/schemas";
 
-type Table = "entities" | "people" | "payment_methods" | "categories" | "clients";
+type Table = "entities" | "people" | "payment_methods" | "categories" | "clients" | "recurring_rules";
 
 function friendly(error: { code?: string; message: string }): string {
   if (error.code === "23503") return "Este registro está em uso e não pode ser apagado. Desative-o, se possível.";
@@ -78,3 +78,10 @@ export async function saveSettings(fd: FormData) {
     .upsert({ org_id: orgId, simples_effective_rate: parsed.data.simples_effective_rate });
   back("geral", error ? friendly(error) : undefined);
 }
+
+export async function saveRecurringRule(fd: FormData) {
+  await save("recurring_rules", "recorrencias", recurringRuleSchema,
+    ["direction", "description", "amount_cents", "day_of_month", "start_month", "end_month",
+      "entity_id", "category_id", "payment_method_id", "client_id", "active"], fd);
+}
+export async function deleteRecurringRule(fd: FormData) { await remove("recurring_rules", "recorrencias", fd); }

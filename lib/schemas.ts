@@ -102,3 +102,47 @@ export const settingsSchema = z.object({
 export function formToObject(fd: FormData, names: string[]): Record<string, string> {
   return Object.fromEntries(names.map((n) => [n, String(fd.get(n) ?? "")]));
 }
+
+const month = (msg: string) =>
+  z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, { error: msg }).transform((m) => `${m}-01`);
+const optMonth = z
+  .string()
+  .transform((s, ctx) => {
+    if (s === "") return null;
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(s)) {
+      ctx.addIssue({ code: "custom", message: "Mês final inválido." });
+      return z.NEVER;
+    }
+    return `${s}-01`;
+  });
+const requiredDay = z.string().transform((s, ctx) => {
+  const n = Number(s);
+  if (!Number.isInteger(n) || n < 1 || n > 31) {
+    ctx.addIssue({ code: "custom", message: "O dia deve estar entre 1 e 31." });
+    return z.NEVER;
+  }
+  return n;
+});
+
+export const recurringRuleSchema = z
+  .object({
+    direction: z.enum(["in", "out"], { error: "Escolha entrada ou saída." }),
+    description: text("Informe a descrição."),
+    amount_cents: z.string().transform((s, ctx) => {
+      const c = brlToCents(s);
+      if (c == null || Number.isNaN(c) || c <= 0) {
+        ctx.addIssue({ code: "custom", message: "Informe o valor (ex.: 55,90)." });
+        return z.NEVER;
+      }
+      return c;
+    }),
+    day_of_month: requiredDay,
+    start_month: month("Informe o mês de início."),
+    end_month: optMonth,
+    entity_id: z.uuid({ error: "Escolha a entidade." }),
+    category_id: optUuid,
+    payment_method_id: optUuid,
+    client_id: optUuid,
+    active: bool,
+  })
+  .refine((r) => !r.end_month || r.end_month >= r.start_month, { error: "O mês final não pode ser antes do início." });

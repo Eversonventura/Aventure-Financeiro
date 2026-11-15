@@ -112,3 +112,15 @@ describe("paridade TypeScript x SQL (invoice_month_for)", () => {
     for (const r of rows) expect(invoiceMonthFor(r.d, closing, due), `${r.d}`).toBe(r.m);
   });
 });
+
+describe("recorrências: gerar duas vezes não duplica", () => {
+  it("a chave (org, source, external_id) ignora o segundo envio", async () => {
+    const ext = "50000000-0000-4000-8000-000000000001:2026-11";
+    const ins = `insert into transactions (org_id,type,status,description,amount_cents,competence_date,cash_date,entity_id,source,external_id)
+      values ('${O.a}','expense','forecast','ChatGPT',10000,'2026-11-05','2026-11-05','${EA}','recurring','${ext}')
+      on conflict (org_id, source, external_id) do nothing returning id`;
+    expect(await as(U.a, ins)).toHaveLength(1);
+    expect(await as(U.a, ins)).toHaveLength(0);
+    expect(await as(U.a, `select 1 from transactions where external_id='${ext}'`)).toHaveLength(1);
+  });
+});

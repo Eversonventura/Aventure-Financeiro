@@ -45,3 +45,20 @@ describe("alíquota do Simples", () => {
     expect(settingsSchema.safeParse({ simples_effective_rate: "40" }).success).toBe(false);
   });
 });
+
+import { recurringRuleSchema } from "./schemas";
+describe("regra recorrente", () => {
+  const r = (o: Record<string, string> = {}) => ({
+    direction: "out", description: "ChatGPT", amount_cents: "100,00", day_of_month: "5", start_month: "2026-09", end_month: "",
+    entity_id: "20000000-0000-4000-8000-00000000000a", category_id: "", payment_method_id: "", client_id: "", active: "on", ...o,
+  });
+  it("converte mês para dia 1 e valor para centavos", () => {
+    expect(recurringRuleSchema.parse(r())).toMatchObject({ amount_cents: 10000, start_month: "2026-09-01", end_month: null, day_of_month: 5, active: true });
+  });
+  it("rejeita mês final antes do início, valor zero e dia inválido", () => {
+    expect(recurringRuleSchema.safeParse(r({ end_month: "2026-08" })).success).toBe(false);
+    expect(recurringRuleSchema.safeParse(r({ amount_cents: "0" })).success).toBe(false);
+    expect(recurringRuleSchema.safeParse(r({ day_of_month: "32" })).success).toBe(false);
+    expect(recurringRuleSchema.safeParse(r({ start_month: "" })).success).toBe(false);
+  });
+});

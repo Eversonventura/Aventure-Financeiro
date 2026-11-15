@@ -4,7 +4,7 @@ export type Option = { value: string; label: string };
 export type Field = {
   name: string;
   label: string;
-  type: "text" | "select" | "money" | "percent" | "number" | "checkbox";
+  type: "text" | "select" | "money" | "percent" | "number" | "checkbox" | "month";
   options?: Option[];
   required?: boolean;
   hint?: string;
@@ -36,7 +36,8 @@ function FieldInput({ f, value }: { f: Field; value: string }) {
           name={f.name}
           defaultValue={value}
           required={f.required}
-          inputMode={f.type === "text" ? undefined : "decimal"}
+          type={f.type === "month" ? "month" : "text"}
+          inputMode={f.type === "text" || f.type === "month" ? undefined : "decimal"}
           className={input}
         />
       )}

@@ -5,6 +5,7 @@ const SECOES = [
   { href: "/configuracoes/pessoas", titulo: "Pessoas", desc: "Quem faz os gastos" },
   { href: "/configuracoes/meios", titulo: "Meios de pagamento", desc: "Cartões, contas e dia de fechamento e vencimento" },
   { href: "/configuracoes/categorias", titulo: "Categorias", desc: "Linha do DRE, natureza e rateio da casa" },
+  { href: "/configuracoes/recorrencias", titulo: "Recorrências", desc: "Assinaturas, contas fixas e mensalidades que se repetem todo mês" },
   { href: "/configuracoes/clientes", titulo: "Clientes", desc: "Quem paga a Aventure" },
   { href: "/configuracoes/geral", titulo: "Geral", desc: "Alíquota efetiva do Simples Nacional" },
 ];
