@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState, useSyncExternalStore, type ReactNode } from "react";
 import {
   IconBell, IconCalendar, IconCard, IconChart, IconChevronLeft, IconChevronRight, IconClose,
-  IconFlow, IconGrid, IconHome, IconList, IconLogout, IconMenu, IconSearch, IconSettings,
+  IconFlow, IconGrid, IconHome, IconList, IconLogout, IconMenu, IconSearch, IconSettings, IconUpload,
 } from "@/components/icons";
 import { Logo } from "@/components/logo";
 
@@ -17,6 +17,7 @@ const ITENS = [
   { href: "/contas", label: "Contas do mês", Icon: IconCalendar, curto: "Contas" },
   { href: "/cartoes", label: "Cartões", Icon: IconCard },
   { href: "/dre", label: "DRE", Icon: IconChart },
+  { href: "/importacoes", label: "Importações", Icon: IconUpload },
   { href: "/configuracoes", label: "Configurações", Icon: IconSettings, curto: "Config." },
 ];
 const ABAS = ["/", "/lancamentos", "/contas", "/cartoes", "/painel"]

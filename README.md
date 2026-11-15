@@ -17,8 +17,13 @@ Scripts: `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`.
 3. `npm test` valida o schema, a RLS e o cálculo de fatura em um Postgres local (PGlite), sem tocar no banco real.
 
 ## Variáveis de ambiente (Vercel)
-`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (só servidor), `CRON_SECRET` e, a partir da etapa 8, `ANTHROPIC_API_KEY`.
+`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (só servidor), `CRON_SECRET` e `ANTHROPIC_API_KEY` (importação da planilha e classificação). O nome do modelo pode ser trocado em `ANTHROPIC_MODEL_SONNET`.
 
 ## Recorrências
 `vercel.json` agenda `GET /api/cron/recorrencias` todo dia às 05:00 (Fortaleza). A rota exige `Authorization: Bearer $CRON_SECRET`
 (a Vercel envia isso sozinha quando `CRON_SECRET` está cadastrada) e gera os lançamentos previstos do mês. É idempotente.
+
+## Importação da planilha
+`Importações` → enviar o .xlsx. O Claude lê o layout e monta um mapa de blocos; você confere (tipo, mês, cartão) e vê uma prévia antes de importar.
+Parcelas `n/N` viram um único grupo, assinaturas e contas fixas viram recorrências, a fatura do cartão não entra como despesa e reimportar não duplica.
+Dá para desfazer a importação inteira. Aplique antes a migration `20261115000002_imports.sql`.
