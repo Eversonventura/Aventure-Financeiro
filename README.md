@@ -53,3 +53,9 @@ Aplique antes a migration `20261115000004_dre_signed.sql` (separa entradas e sa�
 `Empréstimos e consórcios` cadastra empréstimo, financiamento ou consórcio (nome, parcela, total, quantas já foram pagas, próximo vencimento) e gera as parcelas que faltam como lançamentos previstos ligados por `commitment_id`.
 Elas entram no fluxo de caixa, em Contas do mês (onde se marca como paga, com o valor real) e no Início. Editar valor ou total atualiza só as parcelas não pagas; encerrar remove as futuras.
 Aplique antes a migration `20261115000006_commitments.sql`.
+
+## Asaas (etapa 11)
+Variáveis na Vercel: `ASAAS_API_KEY`, `ASAAS_WEBHOOK_TOKEN` (e, para testar no sandbox, `ASAAS_BASE_URL=https://sandbox.asaas.com/api/v3`).
+Webhook do Asaas apontando para `https://<seu-dominio>/api/webhooks/asaas`, com o mesmo token no cabeçalho `asaas-access-token`.
+Cobrança recebida ou confirmada baixa a mensalidade do cliente (valor real e data do dinheiro, tarifa registrada); o id do evento garante que repetir não duplica; estorno desfaz.
+`/api/cron/asaas` roda todo dia às 05:30 (Fortaleza) e baixa o que o webhook possa ter perdido. Tela: Configurações → Integração Asaas. Aplique antes a migration `20261115000007_asaas.sql`.

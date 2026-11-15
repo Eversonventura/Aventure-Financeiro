@@ -8,6 +8,7 @@ const SECOES = [
   { href: "/configuracoes/recorrencias", titulo: "Recorrências", desc: "Assinaturas, contas fixas e mensalidades que se repetem todo mês" },
   { href: "/configuracoes/regras", titulo: "Regras de classificação", desc: "O que o sistema aprendeu: “sempre que aparecer X, é Y”" },
   { href: "/configuracoes/clientes", titulo: "Clientes", desc: "Quem paga a Aventure" },
+  { href: "/configuracoes/asaas", titulo: "Integração Asaas", desc: "Baixa automática das mensalidades quando o cliente paga" },
   { href: "/configuracoes/geral", titulo: "Geral", desc: "Alíquota efetiva do Simples Nacional" },
 ];
 

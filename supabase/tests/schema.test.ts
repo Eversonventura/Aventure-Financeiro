@@ -314,3 +314,20 @@ describe("compromissos (empréstimos, financiamentos e consórcios)", () => {
     expect(await as(U.a, `select 1 from transactions where external_id='commit:${CM}:5' and commitment_id is null and status='paid'`)).toHaveLength(1);
   });
 });
+
+describe("Asaas: eventos e cobranças", () => {
+  it("o mesmo evento não entra duas vezes e o isolamento por organização vale", async () => {
+    const ins = `insert into asaas_events (org_id,event_id,event) values ('${O.a}','evt_1','PAYMENT_RECEIVED')`;
+    await as(U.a, ins);
+    await expect(as(U.a, ins)).rejects.toThrow(/unique|duplicate/);
+    expect(await as(U.a, `select 1 from asaas_events`)).toHaveLength(1);
+    expect(await as(U.b, `select 1 from asaas_events`)).toHaveLength(0);
+    await expect(as(U.v, `insert into asaas_events (org_id,event_id,event) values ('${O.a}','evt_2','X')`)).rejects.toThrow(/row-level security/);
+  });
+  it("uma cobrança do Asaas liga a um único lançamento; um cliente do Asaas a um único cliente", async () => {
+    await as(U.a, `insert into asaas_payments (org_id,payment_id,status) values ('${O.a}','pay_1','paid')`);
+    await expect(as(U.a, `insert into asaas_payments (org_id,payment_id,status) values ('${O.a}','pay_1','paid')`)).rejects.toThrow(/unique|duplicate/);
+    await as(U.a, `insert into clients (id,org_id,name,asaas_customer_id) values ('90000000-0000-4000-8000-0000000000a1','${O.a}','C1','cus_9')`);
+    await expect(as(U.a, `insert into clients (org_id,name,asaas_customer_id) values ('${O.a}','C2','cus_9')`)).rejects.toThrow(/unique|duplicate/);
+  });
+});
