@@ -18,7 +18,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ e
   ];
   return (
     <Section title="Pessoas" searchParams={searchParams}
-      description="Quem faz o gasto. Alexandre e Toinha não têm login: os gastos deles são lançados por Ventura ou Amanda.">
+      description="Quem faz o gasto. Quem não tem login (por exemplo, um familiar) tem os gastos lançados por Ventura ou Amanda.">
       <CrudList rows={rows} fields={fields} newLabel="Nova pessoa"
         title={(r) => r.name}
         subtitle={(r) => `${r.user_id ? "Com login" : "Sem login"} · padrão: ${nome.get(r.default_entity_id ?? "") ?? "—"}`}

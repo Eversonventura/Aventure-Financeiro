@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 const SECOES = [
-  { href: "/configuracoes/entidades", titulo: "Entidades", desc: "Aventure, Ventura, Amanda, Alexandre, Toinha e Casa" },
+  { href: "/configuracoes/entidades", titulo: "Entidades", desc: "Aventure, Ventura, Amanda e Casa" },
   { href: "/configuracoes/pessoas", titulo: "Pessoas", desc: "Quem faz os gastos" },
   { href: "/configuracoes/meios", titulo: "Meios de pagamento", desc: "Cartões, contas e dia de fechamento e vencimento" },
   { href: "/configuracoes/categorias", titulo: "Categorias", desc: "Linha do DRE, natureza e rateio da casa" },

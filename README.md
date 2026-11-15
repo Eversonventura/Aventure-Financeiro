@@ -65,3 +65,9 @@ Todo dia 1 (06:00 em Fortaleza, `/api/cron/analista`) o Claude Opus escreve o re
 Ele recebe só **dados agregados** (DRE, gasto por categoria, entidade e pessoa, assinaturas, alertas), nunca a lista de lançamentos. A resposta é validada por Zod antes de salvar em `ai_insights`.
 O chat usa 4 ferramentas de leitura pré-definidas (`gasto_por_categoria`, `dre_do_mes`, `fluxo_projetado`, `lancamentos_filtrados`), sem SQL livre, sempre com a sessão do usuário e filtrando pela organização (`ANTHROPIC_MODEL_CHAT`, padrão Sonnet).
 Aplique antes a migration `20261115000008_ai_insights_unique.sql`. Tela: Analista IA.
+
+## Conferência de fatura (etapa 13)
+Em `Importações → Conferir fatura do cartão`: envie o PDF (lido pelo Claude Sonnet), CSV ou OFX da fatura e escolha o cartão.
+O sistema cruza com os lançamentos daquela fatura (mesmo valor, data até ±3 dias, descrição parecida; parcelas pelo número n/N) e mostra só as diferenças:
+o que está na fatura e não foi lançado (com botão para lançar já classificado), valor diferente (com botão para usar o da fatura) e o que está lançado mas não aparece na fatura.
+Não precisa de migration nova.
