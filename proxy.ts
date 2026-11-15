@@ -3,7 +3,10 @@ import { NextResponse, type NextRequest } from "next/server";
 
 const PUBLICAS = ["/api/cron", "/api/webhooks", "/login", "/auth", "/manifest.webmanifest", "/sw.js", "/icons"];
 
+const AUTENTICACAO_PROPRIA = ["/api/cron", "/api/webhooks"]; // token próprio: pula a consulta de login
+
 export async function proxy(request: NextRequest) {
+  if (AUTENTICACAO_PROPRIA.some((p) => request.nextUrl.pathname.startsWith(p))) return NextResponse.next();
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(

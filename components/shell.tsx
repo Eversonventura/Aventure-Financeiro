@@ -90,7 +90,7 @@ export function Shell({ name, role, reviewCount, signOut, children }: Props) {
   );
 
   const sair = (compacto: boolean) => (
-    <form action={signOut}>
+    <form action={signOut} onSubmit={() => { try { void caches?.keys().then((ks) => ks.forEach((k) => void caches.delete(k))); } catch { /* sem cache */ } }}>
       <button className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm text-muted hover:bg-surface-2 hover:text-ink ${compacto ? "justify-center px-0" : ""}`} title="Sair" aria-label="Sair">
         <IconLogout width={18} height={18} />
         {!compacto && "Sair"}

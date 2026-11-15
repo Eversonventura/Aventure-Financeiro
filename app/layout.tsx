@@ -11,6 +11,7 @@ const anton = Anton({ variable: "--font-anton", subsets: ["latin"], weight: "400
 export const metadata: Metadata = {
   title: "Aventure Financeiro",
   description: "Caixa único da família e da Aventure",
+  robots: { index: false, follow: false },
   appleWebApp: { capable: true, title: "Financeiro", statusBarStyle: "black" },
 };
 

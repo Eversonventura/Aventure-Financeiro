@@ -9,6 +9,7 @@ const SECOES = [
   { href: "/configuracoes/regras", titulo: "Regras de classificação", desc: "O que o sistema aprendeu: “sempre que aparecer X, é Y”" },
   { href: "/configuracoes/clientes", titulo: "Clientes", desc: "Quem paga a Aventure" },
   { href: "/configuracoes/asaas", titulo: "Integração Asaas", desc: "Baixa automática das mensalidades quando o cliente paga" },
+  { href: "/configuracoes/diagnostico", titulo: "Diagnóstico", desc: "Confere chaves, migrations e o que ainda falta configurar" },
   { href: "/configuracoes/geral", titulo: "Geral", desc: "Alíquota efetiva do Simples Nacional" },
 ];
 
