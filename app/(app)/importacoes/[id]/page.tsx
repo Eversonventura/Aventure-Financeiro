@@ -10,6 +10,8 @@ import { buildPlan, type Plan } from "@/lib/sheet/plan";
 import { colLetter, readWorkbook } from "@/lib/sheet/read";
 import { confirmImport, retryMapping, saveLayout, undoImportAction } from "../actions";
 
+export const maxDuration = 60; // classificar pela IA leva alguns segundos
+
 type Imp = { id: string; status: string; original_name: string | null; layout: Layout | null; file_path: string; stats: Record<string, unknown> | null };
 
 const input = "rounded-lg border border-line-strong bg-surface-2 px-2 py-2 text-sm text-ink";
@@ -68,7 +70,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
               <Stat n={Number(stats.ignored ?? 0)} label="linhas ignoradas" />
               <Stat n={Number(stats.groups ?? 0)} label="compras parceladas (grupos)" />
               <Stat n={Number(stats.rules ?? 0)} label="recorrências criadas" />
-              <Stat n={Number(stats.created ?? 0)} label="para revisar (sem categoria)" />
+              <Stat n={Number(stats.classified ?? 0)} label="classificados automaticamente" />
             </div>
             {Object.keys(reasons).length > 0 && (
               <ul className="rounded-xl bg-surface p-4 text-sm text-muted">
@@ -77,7 +79,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
             )}
             {warnings.map((w) => <p key={w} className="rounded-lg bg-amber-400/10 p-3 text-sm text-amber-300">{w}</p>)}
             <div className="flex flex-wrap items-center gap-4">
-              <Link href="/lancamentos?revisao=1" className="rounded-xl bg-gold px-5 py-3 font-semibold text-canvas">Revisar lançamentos</Link>
+              <Link href="/revisao" className="rounded-xl bg-gold px-5 py-3 font-semibold text-canvas">Revisar a fila ({Math.max(0, Number(stats.created ?? 0) - Number(stats.classified ?? 0))})</Link>
               <form action={undoImportAction}>
                 <input type="hidden" name="id" value={imp.id} />
                 <button className="text-sm text-red-400 underline">Desfazer esta importação</button>
@@ -173,7 +175,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
               </ul>
             )}
             {plan.warnings.map((w) => <p key={w} className="rounded-lg bg-amber-400/10 p-3 text-sm text-amber-300">{w}</p>)}
-            <p className="text-xs text-muted">A planilha não traz a data da compra no cartão: o sistema usa o meio do período da fatura. Tudo entra na fila de revisão, sem categoria.</p>
+            <p className="text-xs text-muted">A planilha não traz a data da compra no cartão: o sistema usa o meio do período da fatura. Ao importar, cada item passa por regras, histórico e IA; o que ficar abaixo de 80% de confiança vai para a fila de revisão.</p>
           </section>
         )}
 

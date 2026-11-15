@@ -21,8 +21,9 @@ export type TxOut = {
   type: "expense" | "income"; status: "pending" | "paid" | "forecast"; description: string;
   amount_cents: number; paid_amount_cents: number | null; competence_date: string; cash_date: string;
   invoice_month: string | null; entity_id: string; person_id: string | null; payment_method_id: string | null;
-  category_id: null; client_id: string | null; installment_group_id: string | null; installment_number: number | null;
-  recurring_rule_id: string | null; source: "import_sheet" | "recurring"; external_id: string; needs_review: true;
+  category_id: string | null; client_id: string | null; installment_group_id: string | null; installment_number: number | null;
+  recurring_rule_id: string | null; source: "import_sheet" | "recurring"; external_id: string; needs_review: boolean;
+  ai_confidence?: number | null; ai_suggestion?: { entity_id: string | null; category_id: string | null; person_id: string | null; question: string | null; source: string } | null;
 };
 export type GroupOut = {
   id: string; description: string; installment_cents: number; installments: number;
@@ -30,7 +31,7 @@ export type GroupOut = {
 };
 export type RuleOut = {
   id: string; direction: "in" | "out"; description: string; amount_cents: number; day_of_month: number;
-  start_month: string; end_month: null; entity_id: string; category_id: null; payment_method_id: string | null;
+  start_month: string; end_month: null; entity_id: string; category_id: string | null; payment_method_id: string | null;
   client_id: string | null; active: true;
 };
 export type PlanStats = {

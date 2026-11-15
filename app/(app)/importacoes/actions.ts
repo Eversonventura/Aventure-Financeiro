@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { todayFortaleza } from "@/lib/dates";
+import { classifyPlan } from "@/lib/classify/plan";
+import { classifyItems } from "@/lib/classify/server";
 import { getCtx } from "@/lib/org";
 import { mapLayout } from "@/lib/sheet/ai-layout";
 import { hasAnthropicKey, sonnetComplete } from "@/lib/sheet/anthropic";
@@ -68,11 +70,18 @@ export async function confirmImport(fd: FormData) {
     if (file.error || !file.data) throw new Error("Não foi possível ler o arquivo guardado.");
     const grids = await readWorkbook(await file.data.arrayBuffer());
     const ex = extract(grids, layout);
-    const plan = buildPlan(ex.items, ex.ignored, await loadPlanContext(c.supabase, todayFortaleza()));
+    const built = buildPlan(ex.items, ex.ignored, await loadPlanContext(c.supabase, todayFortaleza()));
+    // regra -> histórico -> Claude Haiku; confiança abaixo de 0,80 vai para a fila de revisão
+    let loaded: Awaited<ReturnType<typeof classifyItems>>["loaded"] | undefined;
+    const { plan, classified } = await classifyPlan(built, async (items) => {
+      const r = await classifyItems(c.supabase, c.orgId, items, { learn: false, loaded });
+      loaded = r.loaded;
+      return r.results;
+    });
     const { created } = await applyPlan(c.supabase, { orgId: c.orgId, userId: c.userId, importId: id }, plan);
     await c.supabase.from("imports").update({
       status: "done",
-      stats: { ...plan.stats, created, warnings: [...ex.warnings, ...plan.warnings], ignoredReasons: countReasons(plan.ignored.map((i) => i.reason)) },
+      stats: { ...plan.stats, created, classified, warnings: [...ex.warnings, ...plan.warnings], ignoredReasons: countReasons(plan.ignored.map((i) => i.reason)) },
     }).eq("id", id);
   } catch (e) {
     console.error("importacao", e);

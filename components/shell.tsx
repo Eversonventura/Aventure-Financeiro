@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState, useSyncExternalStore, type ReactNode } from "react";
 import {
   IconBell, IconCalendar, IconCard, IconChart, IconChevronLeft, IconChevronRight, IconClose,
-  IconFlow, IconGrid, IconHome, IconList, IconLogout, IconMenu, IconSearch, IconSettings, IconUpload,
+  IconCheck, IconFlow, IconGrid, IconHome, IconList, IconLogout, IconMenu, IconSearch, IconSettings, IconUpload,
 } from "@/components/icons";
 import { Logo } from "@/components/logo";
 
@@ -14,6 +14,7 @@ const ITENS = [
   { href: "/painel", label: "Painel", Icon: IconGrid },
   { href: "/fluxo", label: "Fluxo de caixa", Icon: IconFlow, curto: "Fluxo" },
   { href: "/lancamentos", label: "Lançamentos", Icon: IconList },
+  { href: "/revisao", label: "Revisão", Icon: IconCheck },
   { href: "/contas", label: "Contas do mês", Icon: IconCalendar, curto: "Contas" },
   { href: "/cartoes", label: "Cartões", Icon: IconCard },
   { href: "/dre", label: "DRE", Icon: IconChart },
@@ -58,7 +59,7 @@ export function Shell({ name, role, reviewCount, signOut, children }: Props) {
 
   const Sino = (
     <Link
-      href="/lancamentos?revisao=1"
+      href="/revisao"
       aria-label={reviewCount > 0 ? `${reviewCount} lançamentos para revisar` : "Nada para revisar"}
       className="relative flex size-11 items-center justify-center rounded-full border border-line bg-surface hover:bg-surface-2"
     >

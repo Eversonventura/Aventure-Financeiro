@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { brlToCents, parsePercent } from "@/lib/format";
 import { isValidDate } from "@/lib/invoice";
+import { norm } from "@/lib/sheet/extract";
 
 export const ENTITY_KINDS = { pj: "Empresa (PJ)", pf: "Pessoa (PF)", shared: "Compartilhado" } as const;
 export const PM_KINDS = { credit_card: "Cartão de crédito", bank_account: "Conta bancária", pix: "Pix", cash: "Dinheiro" } as const;
@@ -170,3 +171,14 @@ export const recurringRuleSchema = z
     active: bool,
   })
   .refine((r) => !r.end_month || r.end_month >= r.start_month, { error: "O mês final não pode ser antes do início." });
+
+export const classificationRuleSchema = z
+  .object({
+    match_text: z.string().transform((s) => norm(s)).refine((s) => s.length >= 3, { error: "O texto precisa ter pelo menos 3 letras." }),
+    match_kind: z.enum(["contains", "equals"], { error: "Escolha como comparar." }),
+    payment_method_id: optUuid,
+    entity_id: optUuid,
+    category_id: optUuid,
+    person_id: optUuid,
+  })
+  .refine((r) => r.entity_id || r.category_id, { error: "Escolha a entidade e/ou a categoria." });

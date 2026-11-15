@@ -44,7 +44,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ m
   const alertas: Alert[] = [];
   if (negativo) alertas.push({ tone: "late", text: `Saldo previsto fica negativo em ${negativo.label} (mínimo ${centsToBRL(negativo.minBalance)}).`, href: "/fluxo" });
   if (contas.atrasadas > 0) alertas.push({ tone: "late", text: `${contas.atrasadas} conta(s) vencida(s) neste mês.`, href: "/contas" });
-  if ((rev.count ?? 0) > 0) alertas.push({ tone: "warn", text: `${rev.count} lançamento(s) sem categoria não entram no DRE.`, href: "/lancamentos?revisao=1" });
+  if ((rev.count ?? 0) > 0) alertas.push({ tone: "warn", text: `${rev.count} lançamento(s) sem categoria não entram no DRE.`, href: "/revisao" });
   if ((cartoes.data ?? []).length > 0) alertas.push({ tone: "warn", text: `${cartoes.data?.length} cartão(ões) sem fechamento/vencimento definidos.`, href: "/configuracoes/meios" });
   if (!flow.opening.date) alertas.push({ tone: "plain", text: "Informe o saldo em contas para o fluxo de caixa projetado.", href: "/configuracoes/geral" });
 

@@ -1,8 +1,9 @@
 "use client";
 
-import { useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { brlToCents, centsToBRL } from "@/lib/format";
 import { buildLaunch, launchSchema, type MethodInfo } from "@/lib/launch";
+import { fitsEntity } from "@/lib/categories";
 import { sendOrQueue } from "@/lib/queue";
 
 export type RefData = {
@@ -13,6 +14,7 @@ export type RefData = {
 };
 
 type Kind = "expense" | "income" | "transfer";
+type Suggestion = { entity_id: string | null; category_id: string | null; confidence: number; sure: boolean; source: string };
 const KINDS: { value: Kind; label: string }[] = [
   { value: "expense", label: "Saída" },
   { value: "income", label: "Entrada" },
@@ -67,6 +69,9 @@ function LaunchFormInner({ refs }: { refs: RefData }) {
   const [launchId, setLaunchId] = useState(novoId);
   const [msg, setMsg] = useState<{ tone: "ok" | "info" | "erro"; text: string } | null>(null);
   const [saving, setSaving] = useState(false);
+  const [entityTouched, setEntityTouched] = useState(false);
+  const [categoryTouched, setCategoryTouched] = useState(false);
+  const [sugg, setSugg] = useState<Suggestion | null>(null);
   const amountRef = useRef<HTMLInputElement>(null);
 
   const method = refs.methods.find((m) => m.id === methodId) ?? null;
@@ -75,12 +80,40 @@ function LaunchFormInner({ refs }: { refs: RefData }) {
   const isCard = type === "expense" && method?.kind === "credit_card";
 
   const categories = refs.categories.filter(
-    (c) => c.direction === (type === "income" ? "in" : "out") && (!c.applies_to || c.applies_to === entity?.kind),
+    (c) => c.direction === (type === "income" ? "in" : "out") && fitsEntity(c.applies_to, entity?.kind),
   );
   const categoryOk = categories.some((c) => c.id === categoryId);
 
   const cents = brlToCents(amountText);
   const amountValid = cents != null && !Number.isNaN(cents) && cents > 0;
+
+  // sugestão de entidade e categoria (regras, histórico e IA) enquanto a pessoa digita
+  const amountForSuggestion = amountValid ? cents : 0;
+  useEffect(() => {
+    const desc = description.trim();
+    if (type === "transfer" || desc.length < 3 || (typeof navigator !== "undefined" && !navigator.onLine)) return;
+    const ctrl = new AbortController();
+    const t = setTimeout(async () => {
+      try {
+        const res = await fetch("/api/classificar", {
+          method: "POST", headers: { "content-type": "application/json" }, signal: ctrl.signal,
+          body: JSON.stringify({ description: desc, amount_cents: amountForSuggestion, payment_method_id: methodId || null, person_id: personId || null, type }),
+        });
+        if (!res.ok) return;
+        const s = (await res.json()) as Suggestion;
+        if (s.source === "none") return setSugg(null);
+        setSugg(s);
+        if (!s.sure) return;
+        const e = refs.entities.find((x) => x.id === s.entity_id);
+        if (e && !entityTouched) setEntityId(e.id);
+        const kind = (e ?? refs.entities.find((x) => x.id === entityId))?.kind;
+        const c = refs.categories.find((x) => x.id === s.category_id);
+        if (c && !categoryTouched && c.direction === (type === "income" ? "in" : "out") && fitsEntity(c.applies_to, kind)) setCategoryId(c.id);
+      } catch { /* sem conexão ou cancelado: a sugestão é opcional */ }
+    }, 700);
+    return () => { clearTimeout(t); ctrl.abort(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [description, methodId, personId, type]);
 
   const draft = (() => {
     if (!amountValid || !launchId || !entityId) return null;
@@ -122,6 +155,9 @@ function LaunchFormInner({ refs }: { refs: RefData }) {
     );
     setAmountText("");
     setDescription("");
+    setSugg(null);
+    setEntityTouched(false);
+    setCategoryTouched(false);
     setInstallments(1);
     setLaunchId(novoId());
     amountRef.current?.focus();
@@ -203,7 +239,7 @@ function LaunchFormInner({ refs }: { refs: RefData }) {
         <span className="text-sm font-medium">De quem é o gasto</span>
         <div className="flex flex-wrap gap-2">
           {refs.entities.map((e) => (
-            <Chip key={e.id} on={entityId === e.id} onClick={() => { setEntityId(e.id); setCategoryId(""); }}>{e.name}</Chip>
+            <Chip key={e.id} on={entityId === e.id} onClick={() => { setEntityId(e.id); setCategoryId(""); setEntityTouched(true); }}>{e.name}</Chip>
           ))}
         </div>
       </div>
@@ -213,10 +249,24 @@ function LaunchFormInner({ refs }: { refs: RefData }) {
           <span className="text-sm font-medium">Categoria <span className="font-normal text-muted">(sem categoria vai para revisão)</span></span>
           <div className="flex flex-wrap gap-2">
             {categories.map((c) => (
-              <Chip key={c.id} on={categoryId === c.id} onClick={() => setCategoryId(categoryId === c.id ? "" : c.id)}>{c.name}</Chip>
+              <Chip key={c.id} on={categoryId === c.id} onClick={() => { setCategoryTouched(true); setCategoryId(categoryId === c.id ? "" : c.id); }}>{c.name}</Chip>
             ))}
           </div>
         </div>
+      )}
+
+      {sugg && (
+        <p className="text-sm text-muted">
+          {sugg.sure ? "Sugerido" : "Talvez"} ({sugg.source === "ai" ? "IA" : "regra"}
+          {sugg.sure ? "" : `, ${Math.round(sugg.confidence * 100)}%`}):{" "}
+          {[refs.entities.find((e) => e.id === sugg.entity_id)?.name, refs.categories.find((c) => c.id === sugg.category_id)?.name].filter(Boolean).join(" · ")}
+          {!sugg.sure && (
+            <button type="button" className="ml-2 underline" onClick={() => {
+              if (sugg.entity_id) { setEntityId(sugg.entity_id); setEntityTouched(true); }
+              if (sugg.category_id) { setCategoryId(sugg.category_id); setCategoryTouched(true); }
+            }}>usar</button>
+          )}
+        </p>
       )}
 
       <details className="rounded-lg border border-line">

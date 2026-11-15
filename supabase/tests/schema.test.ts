@@ -180,3 +180,22 @@ describe("views com dados: faturas, fluxo, retiradas e rateio da casa", () => {
     expect((cum[0].c as number) - (antes[0].c as number)).toBe(300000 + 5000 - 120000 - 75000);
   });
 });
+
+describe("classificação: regras e sugestões da IA", () => {
+  const T = "70000000-0000-4000-8000-000000000001";
+  it("a sugestão da IA fica guardada no lançamento (jsonb) e some quando alguém confirma", async () => {
+    await db.exec(`reset role; insert into transactions (id,org_id,type,description,amount_cents,competence_date,cash_date,entity_id,needs_review,ai_confidence,ai_suggestion)
+      values ('${T}','${O.a}','expense','GUARA',5000,'2026-12-01','2026-12-01','${EA}',true,0.62,'{"entity_id":"x","category_id":null,"question":"Mercado da Casa?","source":"ai"}');`);
+    const r = await as(U.a, `select ai_confidence::float c, ai_suggestion->>'question' q from transactions where id='${T}'`);
+    expect(r).toEqual([{ c: 0.62, q: "Mercado da Casa?" }]);
+    await as(U.a, `update transactions set needs_review=false, ai_suggestion=null where id='${T}'`);
+    expect(await as(U.a, `select 1 from transactions where id='${T}' and ai_suggestion is null and needs_review=false`)).toHaveLength(1);
+  });
+  it("regras de classificação: só a organização vê e só quem escreve cria", async () => {
+    await as(U.a, `insert into classification_rules (org_id,match_text,match_kind,entity_id) values ('${O.a}','guara','contains','${EA}')`);
+    expect(await as(U.a, `select 1 from classification_rules`)).toHaveLength(1);
+    expect(await as(U.b, `select 1 from classification_rules`)).toHaveLength(0);
+    await expect(as(U.v, `insert into classification_rules (org_id,match_text) values ('${O.a}','x')`)).rejects.toThrow(/row-level security/);
+    await expect(as(U.a, `insert into classification_rules (org_id,match_text,entity_id) values ('${O.a}','y','${EB}')`)).rejects.toThrow(/foreign key/);
+  });
+});

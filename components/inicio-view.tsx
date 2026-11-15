@@ -59,7 +59,7 @@ export function InicioView({ mes, aPagar, aReceber, pagoCents, recebidoCents, at
               <div className="text-sm text-muted">Fila de revisão</div>
               <div className="mt-2 flex items-baseline gap-2"><span className="font-heading text-4xl font-bold">{revisar}</span><span className="text-muted">sem categoria</span></div>
               <div className="mt-4 text-sm text-muted">Lançamentos que a categoria ainda não foi escolhida.</div>
-              <Link href="/lancamentos?revisao=1" className="mt-2 inline-block text-sm font-medium text-gold underline">Revisar agora</Link>
+              <Link href="/revisao" className="mt-2 inline-block text-sm font-medium text-gold underline">Revisar agora</Link>
             </div>
           </div>
         </section>

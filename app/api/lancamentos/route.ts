@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { classifyLaunch } from "@/lib/classify/server";
 import { buildLaunch, launchSchema, type MethodInfo } from "@/lib/launch";
 import { createClient } from "@/lib/supabase/server";
 
@@ -34,6 +35,19 @@ export async function POST(request: NextRequest) {
   const built = buildLaunch(input, method, toMethod);
   if (!built.ok) return NextResponse.json({ error: built.error }, { status: 400 });
 
+  // categoria em branco: tenta regra, histórico e IA; abaixo de 0,80 fica na fila de revisão com a sugestão guardada
+  let extra: { category_id: string | null; person_id: string | null; needs_review: boolean; ai_confidence: number | null; ai_suggestion: unknown } | null = null;
+  if (input.type !== "transfer" && input.category_id == null) {
+    try {
+      extra = await classifyLaunch(supabase, orgId, {
+        description: input.description, amount_cents: input.amount_cents, payment_method_id: input.payment_method_id,
+        person_id: input.person_id, type: input.type,
+      }, input.entity_id);
+    } catch (e) {
+      console.error("classificacao", e instanceof Error ? e.message : e); // classificar é bônus: o lançamento é salvo igual
+    }
+  }
+
   if (built.group) {
     const { error } = await supabase
       .from("installment_groups")
@@ -43,7 +57,7 @@ export async function POST(request: NextRequest) {
   const { error } = await supabase
     .from("transactions")
     .upsert(
-      built.rows.map((r) => ({ ...r, org_id: orgId, created_by: user.id })),
+      built.rows.map((r) => ({ ...r, ...(extra ?? {}), org_id: orgId, created_by: user.id })),
       { onConflict: "org_id,source,external_id", ignoreDuplicates: true },
     );
   if (error) return dbError(error);
