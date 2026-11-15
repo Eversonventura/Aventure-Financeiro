@@ -15,7 +15,7 @@ const TONE = {
 } as const;
 
 /** Linha de conta: deslizar para a direita (ou tocar no botão) abre o "marcar como pago". */
-export function ContaRow({ c, mes }: { c: ContaView; mes: string }) {
+export function ContaRow({ c, mes, to = "contas" }: { c: ContaView; mes: string; to?: "contas" | "clientes" }) {
   const [open, setOpen] = useState(false);
   const x0 = useRef<number | null>(null);
   const dd = c.due.slice(8, 10), mm = c.due.slice(5, 7);
@@ -49,12 +49,14 @@ export function ContaRow({ c, mes }: { c: ContaView; mes: string }) {
         <form action={undoPaid} className="mt-1 text-right">
           <input type="hidden" name="id" value={c.id} />
           <input type="hidden" name="mes" value={mes} />
+          <input type="hidden" name="to" value={to} />
           <button className="text-xs text-muted underline">Desfazer</button>
         </form>
       ) : open ? (
         <form action={markPaid} className="mt-3 flex flex-col gap-2 border-t border-line pt-3">
           <input type="hidden" name="id" value={c.id} />
           <input type="hidden" name="mes" value={mes} />
+          <input type="hidden" name="to" value={to} />
           <label className="flex flex-col gap-1 text-sm">
             Valor real (R$) — deixe como está se foi o previsto
             <input name="valor" defaultValue={centsToInput(c.amount_cents)} inputMode="decimal" autoFocus

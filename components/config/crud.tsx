@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { ConfirmButton } from "@/components/config/confirm-button";
 
 export type Option = { value: string; label: string };
 export type Field = {
@@ -65,9 +66,11 @@ export function RecordForm({
 }
 
 export function CrudList<R extends { id: string }>({
-  rows, title, subtitle, fields, valuesOf, saveAction, deleteAction, newLabel, newValues, emptyText = "Nada cadastrado ainda.",
+  rows, title, subtitle, fields, valuesOf, saveAction, deleteAction, newLabel, newValues, renderDelete, deleteConfirm, emptyText = "Nada cadastrado ainda.",
 }: {
   newValues?: Values;
+  renderDelete?: (row: R) => ReactNode; // campos extras do formulário de apagar (ex.: mover para outra entidade)
+  deleteConfirm?: (row: R) => string;
   rows: R[];
   title: (r: R) => ReactNode;
   subtitle?: (r: R) => ReactNode;
@@ -89,9 +92,10 @@ export function CrudList<R extends { id: string }>({
           </summary>
           <div className="flex flex-col gap-3 border-t border-line p-4">
             <RecordForm action={saveAction} fields={fields} values={valuesOf(r)} id={r.id} />
-            <form action={deleteAction}>
+            <form action={deleteAction} className="flex flex-col gap-2 border-t border-line pt-3">
               <input type="hidden" name="id" value={r.id} />
-              <button className="text-sm text-red-400 underline">Apagar</button>
+              {renderDelete?.(r)}
+              <ConfirmButton message={deleteConfirm?.(r) ?? "Apagar este registro?"} className="w-fit text-sm text-red-400 underline">Apagar</ConfirmButton>
             </form>
           </div>
         </details>

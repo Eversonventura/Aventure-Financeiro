@@ -4,7 +4,9 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { IconCamera, IconMic } from "@/components/icons";
 import type { Capture } from "@/lib/capture/types";
 import { brlToCents, centsToBRL, centsToInput } from "@/lib/format";
+import { createCategoryInline, createClientInline } from "@/app/(app)/lancamentos/novo/actions";
 import { compressImage } from "@/lib/image";
+import { DRE_LINES } from "@/lib/schemas";
 import { buildLaunch, launchSchema, type MethodInfo } from "@/lib/launch";
 import { fitsEntity } from "@/lib/categories";
 import { sendOrQueue } from "@/lib/queue";
@@ -14,6 +16,7 @@ export type RefData = {
   people: { id: string; name: string; default_entity_id: string | null; isMe: boolean }[];
   methods: (MethodInfo & { name: string })[];
   categories: { id: string; name: string; applies_to: "pj" | "pf" | "shared" | null; direction: "in" | "out" }[];
+  clients: { id: string; name: string }[];
 };
 
 type SpeechRec = {
@@ -59,17 +62,17 @@ const dataBR = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
 const noop = () => () => {};
 
 /** Data, id e últimos usados dependem do aparelho: o formulário só monta no cliente. */
-export function LaunchForm({ refs }: { refs: RefData }) {
+export function LaunchForm({ refs, initialType = "expense" }: { refs: RefData; initialType?: "expense" | "income" }) {
   const noCliente = useSyncExternalStore(noop, () => true, () => false);
   if (!noCliente) return <p className="text-muted">Carregando…</p>;
-  return <LaunchFormInner refs={refs} />;
+  return <LaunchFormInner refs={refs} initialType={initialType} />;
 }
 
-function LaunchFormInner({ refs }: { refs: RefData }) {
+function LaunchFormInner({ refs, initialType }: { refs: RefData; initialType: "expense" | "income" }) {
   const me = refs.people.find((p) => p.isMe);
   const lm = lembrar("method");
   const le = lembrar("entity");
-  const [type, setType] = useState<Kind>("expense");
+  const [type, setType] = useState<Kind>(initialType);
   const [amountText, setAmountText] = useState("");
   const [description, setDescription] = useState("");
   const [methodId, setMethodId] = useState(() => (refs.methods.some((m) => m.id === lm) ? lm : refs.methods[0]?.id ?? ""));
@@ -86,6 +89,12 @@ function LaunchFormInner({ refs }: { refs: RefData }) {
   const [categoryTouched, setCategoryTouched] = useState(false);
   const [sugg, setSugg] = useState<Suggestion | null>(null);
   const [receiptPath, setReceiptPath] = useState<string | null>(null);
+  const [extraCats, setExtraCats] = useState<RefData["categories"]>([]);
+  const [extraClients, setExtraClients] = useState<RefData["clients"]>([]);
+  const [clientId, setClientId] = useState("");
+  const [newCat, setNewCat] = useState<{ open: boolean; name: string; line: string }>({ open: false, name: "", line: "" });
+  const [newClient, setNewClient] = useState<{ open: boolean; name: string }>({ open: false, name: "" });
+  const [creating, setCreating] = useState(false);
   const [voiceOpen, setVoiceOpen] = useState(false);
   const [phrase, setPhrase] = useState("");
   const [listening, setListening] = useState(false);
@@ -99,9 +108,11 @@ function LaunchFormInner({ refs }: { refs: RefData }) {
   const entity = refs.entities.find((e) => e.id === entityId);
   const isCard = type === "expense" && method?.kind === "credit_card";
 
-  const categories = refs.categories.filter(
-    (c) => c.direction === (type === "income" ? "in" : "out") && fitsEntity(c.applies_to, entity?.kind),
-  );
+  const allCategories = [...refs.categories, ...extraCats];
+  const categories = allCategories
+    .filter((c) => c.direction === (type === "income" ? "in" : "out") && fitsEntity(c.applies_to, entity?.kind))
+    .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+  const allClients = [...refs.clients, ...extraClients].sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
   const categoryOk = categories.some((c) => c.id === categoryId);
 
   const cents = brlToCents(amountText);
@@ -127,7 +138,7 @@ function LaunchFormInner({ refs }: { refs: RefData }) {
         const e = refs.entities.find((x) => x.id === s.entity_id);
         if (e && !entityTouched) setEntityId(e.id);
         const kind = (e ?? refs.entities.find((x) => x.id === entityId))?.kind;
-        const c = refs.categories.find((x) => x.id === s.category_id);
+        const c = allCategories.find((x) => x.id === s.category_id);
         if (c && !categoryTouched && c.direction === (type === "income" ? "in" : "out") && fitsEntity(c.applies_to, kind)) setCategoryId(c.id);
       } catch { /* sem conexão ou cancelado: a sugestão é opcional */ }
     }, 700);
@@ -143,6 +154,7 @@ function LaunchFormInner({ refs }: { refs: RefData }) {
       payment_method_id: methodId || null, to_payment_method_id: type === "transfer" ? toMethodId || null : null,
       entity_id: entityId, person_id: personId || null, category_id: categoryOk && type !== "transfer" ? categoryId : null,
       receipt_path: type === "transfer" ? null : receiptPath,
+      client_id: type === "income" && clientId ? clientId : null,
     });
     return parsed.success ? parsed.data : null;
   })();
@@ -231,6 +243,38 @@ function LaunchFormInner({ refs }: { refs: RefData }) {
     }
   }
 
+  const dreOptions = (type === "income" ? ["gross_revenue", "financial"] : ["admin_expenses", "cost_of_services", "sales_expenses", "financial", "pro_labore", "deductions"]) as (keyof typeof DRE_LINES)[];
+
+  async function criarCategoria() {
+    if (!navigator.onLine) return setMsg({ tone: "erro", text: "Sem internet: crie a categoria depois, em Configurações." });
+    setCreating(true);
+    const kind = entity?.kind;
+    const r = await createCategoryInline({
+      name: newCat.name, direction: type === "income" ? "in" : "out",
+      applies_to: kind === "pj" ? "pj" : kind ? "pf" : null,
+      dre_line: (kind === "pj" ? newCat.line || dreOptions[0] : "none") as keyof typeof DRE_LINES,
+    });
+    setCreating(false);
+    if (!r.ok) return setMsg({ tone: "erro", text: r.error });
+    setExtraCats((cur) => (cur.some((c) => c.id === r.category.id) ? cur : [...cur, r.category]));
+    setCategoryId(r.category.id);
+    setCategoryTouched(true);
+    setNewCat({ open: false, name: "", line: "" });
+    setMsg(null);
+  }
+
+  async function criarCliente() {
+    if (!navigator.onLine) return setMsg({ tone: "erro", text: "Sem internet: crie o cliente depois, em Configurações." });
+    setCreating(true);
+    const r = await createClientInline({ name: newClient.name });
+    setCreating(false);
+    if (!r.ok) return setMsg({ tone: "erro", text: r.error });
+    setExtraClients((cur) => (cur.some((c) => c.id === r.client.id) ? cur : [...cur, r.client]));
+    setClientId(r.client.id);
+    setNewClient({ open: false, name: "" });
+    setMsg(null);
+  }
+
   async function salvar(e: React.FormEvent) {
     e.preventDefault();
     if (saving) return;
@@ -255,6 +299,7 @@ function LaunchFormInner({ refs }: { refs: RefData }) {
     setAmountText("");
     setDescription("");
     setSugg(null);
+    setClientId("");
     setReceiptPath(null);
     setPhrase("");
     setVoiceOpen(false);
@@ -275,7 +320,21 @@ function LaunchFormInner({ refs }: { refs: RefData }) {
           <button
             key={k.value}
             type="button"
-            onClick={() => { setType(k.value); setCategoryId(""); setInstallments(1); }}
+            onClick={() => {
+              setType(k.value);
+              setCategoryId("");
+              setInstallments(1);
+              setNewCat({ open: false, name: "", line: "" });
+              if (k.value === "income") {
+                // entrada de cliente: cai numa conta (não no cartão) e é da empresa, a menos que a pessoa já tenha escolhido
+                if (method?.kind === "credit_card") setMethodId(refs.methods.find((m) => m.kind === "bank_account" || m.kind === "pix")?.id ?? "");
+                const pj = refs.entities.find((x) => x.kind === "pj");
+                if (!entityTouched && pj) setEntityId(pj.id);
+              } else {
+                setClientId("");
+                if (!methodId) setMethodId(refs.methods.some((m) => m.id === lm) ? lm : refs.methods[0]?.id ?? "");
+              }
+            }}
             aria-pressed={type === k.value}
             className={`flex-1 rounded-lg py-2.5 text-sm font-medium ${type === k.value ? "bg-brand text-white" : "bg-surface-2"}`}
           >
@@ -379,7 +438,7 @@ function LaunchFormInner({ refs }: { refs: RefData }) {
       )}
 
       <div className="flex flex-col gap-2">
-        <span className="text-sm font-medium">De quem é o gasto</span>
+        <span className="text-sm font-medium">{type === "income" ? "Quem recebe" : type === "transfer" ? "Entidade" : "De quem é o gasto"}</span>
         <div className="flex flex-wrap gap-2">
           {refs.entities.map((e) => (
             <Chip key={e.id} on={entityId === e.id} onClick={() => { setEntityId(e.id); setCategoryId(""); setEntityTouched(true); }}>{e.name}</Chip>
@@ -387,14 +446,61 @@ function LaunchFormInner({ refs }: { refs: RefData }) {
         </div>
       </div>
 
+      {type === "income" && (
+        <div className="flex flex-col gap-2">
+          <label className="flex flex-col gap-1">
+            <span className="text-sm font-medium">Cliente <span className="font-normal text-muted">(opcional)</span></span>
+            <select value={newClient.open ? "__new" : clientId} className={input}
+              onChange={(e) => { if (e.target.value === "__new") setNewClient({ open: true, name: "" }); else { setNewClient({ open: false, name: "" }); setClientId(e.target.value); } }}>
+              <option value="">Sem cliente (recebimento avulso)</option>
+              {allClients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              <option value="__new">+ Novo cliente…</option>
+            </select>
+          </label>
+          {newClient.open && (
+            <div className="flex gap-2 rounded-xl border border-line bg-surface p-3">
+              <input value={newClient.name} onChange={(e) => setNewClient({ open: true, name: e.target.value })} placeholder="Nome do cliente" autoFocus
+                className="min-w-0 flex-1 rounded-lg border border-line-strong bg-surface-2 px-3 py-2.5 text-base text-ink" />
+              <button type="button" onClick={() => void criarCliente()} disabled={creating || newClient.name.trim().length < 2} className="rounded-lg bg-gold px-4 font-semibold text-canvas disabled:opacity-50">{creating ? "…" : "Criar"}</button>
+            </div>
+          )}
+        </div>
+      )}
+
       {type !== "transfer" && (
         <div className="flex flex-col gap-2">
-          <span className="text-sm font-medium">Categoria <span className="font-normal text-muted">(sem categoria vai para revisão)</span></span>
-          <div className="flex flex-wrap gap-2">
-            {categories.map((c) => (
-              <Chip key={c.id} on={categoryId === c.id} onClick={() => { setCategoryTouched(true); setCategoryId(categoryId === c.id ? "" : c.id); }}>{c.name}</Chip>
-            ))}
-          </div>
+          <label className="flex flex-col gap-1">
+            <span className="text-sm font-medium">Categoria <span className="font-normal text-muted">(sem categoria vai para revisão)</span></span>
+            <select value={newCat.open ? "__new" : categoryOk ? categoryId : ""} className={input}
+              onChange={(e) => {
+                if (e.target.value === "__new") return setNewCat({ open: true, name: "", line: dreOptions[0] });
+                setNewCat({ open: false, name: "", line: "" });
+                setCategoryTouched(true);
+                setCategoryId(e.target.value);
+              }}>
+              <option value="">Sem categoria</option>
+              {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              <option value="__new">+ Nova categoria…</option>
+            </select>
+          </label>
+          {newCat.open && (
+            <div className="flex flex-col gap-2 rounded-xl border border-line bg-surface p-3">
+              <input value={newCat.name} onChange={(e) => setNewCat({ ...newCat, name: e.target.value })} placeholder="Nome da nova categoria" autoFocus
+                className="rounded-lg border border-line-strong bg-surface-2 px-3 py-2.5 text-base text-ink" />
+              {entity?.kind === "pj" && (
+                <label className="flex flex-col gap-1 text-sm">
+                  <span className="text-muted">Em qual linha do DRE entra?</span>
+                  <select value={newCat.line} onChange={(e) => setNewCat({ ...newCat, line: e.target.value })} className="rounded-lg border border-line-strong bg-surface-2 px-3 py-2.5 text-ink">
+                    {dreOptions.map((k) => <option key={k} value={k}>{DRE_LINES[k]}</option>)}
+                  </select>
+                </label>
+              )}
+              <div className="flex gap-2">
+                <button type="button" onClick={() => void criarCategoria()} disabled={creating || newCat.name.trim().length < 2} className="flex-1 rounded-lg bg-gold py-2.5 font-semibold text-canvas disabled:opacity-50">{creating ? "Criando…" : "Criar e usar"}</button>
+                <button type="button" onClick={() => setNewCat({ open: false, name: "", line: "" })} className="rounded-lg border border-line-strong px-4">Cancelar</button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -402,7 +508,7 @@ function LaunchFormInner({ refs }: { refs: RefData }) {
         <p className="text-sm text-muted">
           {sugg.sure ? "Sugerido" : "Talvez"} ({sugg.source === "ai" ? "IA" : "regra"}
           {sugg.sure ? "" : `, ${Math.round(sugg.confidence * 100)}%`}):{" "}
-          {[refs.entities.find((e) => e.id === sugg.entity_id)?.name, refs.categories.find((c) => c.id === sugg.category_id)?.name].filter(Boolean).join(" · ")}
+          {[refs.entities.find((e) => e.id === sugg.entity_id)?.name, allCategories.find((c) => c.id === sugg.category_id)?.name].filter(Boolean).join(" · ")}
           {!sugg.sure && (
             <button type="button" className="ml-2 underline" onClick={() => {
               if (sugg.entity_id) { setEntityId(sugg.entity_id); setEntityTouched(true); }

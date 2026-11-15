@@ -18,7 +18,8 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ e
       <CrudList rows={rows} fields={fields} newLabel="Novo cliente" newValues={{ active: "on" }}
         title={(r) => <>{r.name}{!r.active && " (inativo)"}</>} subtitle={(r) => r.document ?? "Sem documento"}
         valuesOf={(r) => ({ name: r.name, document: r.document ?? "", asaas_customer_id: r.asaas_customer_id ?? "", active: r.active ? "on" : "" })}
-        saveAction={saveClient} deleteAction={deleteClient} />
+        saveAction={saveClient} deleteAction={deleteClient}
+        deleteConfirm={(r) => `Apagar "${r.name}"? Os lançamentos ficam sem cliente e as cobranças mensais dele são desativadas.`} />
     </Section>
   );
 }

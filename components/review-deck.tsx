@@ -104,15 +104,12 @@ export function ReviewDeck({ initial, entities, categories }: { initial: DeckGro
         {entityId && (
           <>
             <div className="mt-5 text-sm font-medium">Categoria <span className="font-normal text-muted">(opcional)</span></div>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {cats.map((c) => (
-                <button key={c.id} onClick={() => setCategoryId(categoryId === c.id ? null : c.id)} aria-pressed={categoryId === c.id}
-                  className={`rounded-full border px-4 py-2.5 text-sm ${categoryId === c.id ? "border-brand bg-brand text-white" : "border-line-strong bg-surface-2"}`}>
-                  {c.name}
-                </button>
-              ))}
-              {cats.length === 0 && <span className="text-sm text-muted">Nenhuma categoria para esta entidade.</span>}
-            </div>
+            <select value={categoryId ?? ""} onChange={(e) => setCategoryId(e.target.value || null)} aria-label="Categoria"
+              className="mt-2 w-full rounded-xl border border-line-strong bg-surface-2 px-3 py-3.5 text-base text-ink">
+              <option value="">Sem categoria</option>
+              {[...cats].sort((a, b) => a.name.localeCompare(b.name, "pt-BR")).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+            {cats.length === 0 && <p className="mt-1 text-sm text-muted">Nenhuma categoria para esta entidade. Crie em Configurações → Categorias.</p>}
 
             <label className="mt-5 flex items-start gap-3 rounded-xl bg-surface-2 p-3 text-sm">
               <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} className="mt-0.5 size-5" />

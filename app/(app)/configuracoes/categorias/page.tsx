@@ -33,7 +33,8 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ e
           .filter(Boolean).join(" · ")}
         valuesOf={(r) => ({ name: r.name, direction: r.direction, applies_to: r.applies_to ?? "", dre_line: r.dre_line,
           nature: r.nature ?? "", pj_share_pct: percentToInput(r.pj_share_pct) })}
-        saveAction={saveCategory} deleteAction={deleteCategory} />
+        saveAction={saveCategory} deleteAction={deleteCategory}
+        deleteConfirm={(r) => `Apagar "${r.name}"? Os lançamentos dela voltam para a fila de revisão.`} />
     </Section>
   );
 }

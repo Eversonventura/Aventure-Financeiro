@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState, useSyncExternalStore, type ReactNode } from "react";
 import {
   IconBell, IconCalendar, IconCard, IconChart, IconChevronLeft, IconChevronRight, IconClose,
-  IconCheck, IconFlow, IconGrid, IconHome, IconList, IconLogout, IconMenu, IconSearch, IconSettings, IconUpload,
+  IconCheck, IconFlow, IconGrid, IconUsers, IconHome, IconList, IconLogout, IconMenu, IconSearch, IconSettings, IconUpload,
 } from "@/components/icons";
 import { Logo } from "@/components/logo";
 
@@ -15,6 +15,7 @@ const ITENS = [
   { href: "/fluxo", label: "Fluxo de caixa", Icon: IconFlow, curto: "Fluxo" },
   { href: "/lancamentos", label: "Lançamentos", Icon: IconList },
   { href: "/revisao", label: "Revisão", Icon: IconCheck },
+  { href: "/clientes", label: "Clientes", Icon: IconUsers },
   { href: "/contas", label: "Contas do mês", Icon: IconCalendar, curto: "Contas" },
   { href: "/cartoes", label: "Cartões", Icon: IconCard },
   { href: "/dre", label: "DRE", Icon: IconChart },

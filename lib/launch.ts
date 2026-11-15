@@ -16,6 +16,7 @@ export const launchSchema = z.object({
   person_id: z.uuid().nullable().default(null),
   category_id: z.uuid().nullable().default(null),
   notes: z.string().trim().max(500).nullable().default(null),
+  client_id: z.uuid().nullable().default(null), // entrada: de qual cliente veio
   receipt_path: z.string().max(100).regex(/^[0-9a-f-]{36}\/[0-9a-f-]{36}\.jpg$/i).nullable().default(null), // foto do cupom (Storage)
 });
 export type LaunchInput = z.infer<typeof launchSchema>;
@@ -58,6 +59,7 @@ export type TxRow = {
   needs_review: boolean;
   notes: string | null;
   receipt_path: string | null;
+  client_id: string | null;
 };
 
 export type BuildResult =
@@ -103,6 +105,7 @@ export function buildLaunch(input: LaunchInput, method: MethodInfo | null, toMet
       external_id: `${input.id}:${suffix}`,
       needs_review: false,
       receipt_path: null,
+      client_id: null,
     });
     return { ok: true, group: null, rows: [leg("out", method.id, "saída"), leg("in", toMethod.id, "entrada")] };
   }
@@ -145,6 +148,7 @@ export function buildLaunch(input: LaunchInput, method: MethodInfo | null, toMet
       external_id: `${input.id}:${i + 1}`,
       needs_review: input.category_id == null,
       receipt_path: i === 0 ? input.receipt_path : null, // a foto fica na 1ª linha
+      client_id: input.type === "income" ? input.client_id : null,
     };
   });
 

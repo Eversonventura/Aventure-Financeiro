@@ -20,7 +20,17 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ e
       <CrudList rows={rows} fields={fields} newLabel="Nova entidade"
         title={(r) => r.name} subtitle={(r) => ENTITY_KINDS[r.kind]}
         valuesOf={(r) => ({ name: r.name, kind: r.kind, document: r.document ?? "" })}
-        saveAction={saveEntity} deleteAction={deleteEntity} />
+        saveAction={saveEntity} deleteAction={deleteEntity}
+        deleteConfirm={(r) => `Apagar "${r.name}"? Tudo que usa esta entidade (lançamentos, cartões, regras) será movido para a entidade escolhida.`}
+        renderDelete={(r) => (
+          <label className="flex flex-col gap-1 text-sm">
+            <span className="text-muted">Para apagar, mova o que usa “{r.name}” para:</span>
+            <select name="move_to" required defaultValue={rows.find((x) => x.id !== r.id && x.kind === "shared")?.id ?? rows.find((x) => x.id !== r.id)?.id}
+              className="rounded-lg border border-line-strong bg-surface-2 px-3 py-2.5 text-ink">
+              {rows.filter((x) => x.id !== r.id).map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
+            </select>
+          </label>
+        )} />
     </Section>
   );
 }

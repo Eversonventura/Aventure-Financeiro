@@ -14,6 +14,7 @@ type Table = "entities" | "people" | "payment_methods" | "categories" | "clients
 function friendly(error: { code?: string; message: string }): string {
   if (error.code === "23503") return "Este registro está em uso e não pode ser apagado. Desative-o, se possível.";
   if (error.code === "42501") return "Você não tem permissão para esta ação.";
+  if (error.code === "P0001") return error.message; // mensagens das funções de apagar, já em português
   if (error.code === "23505") return "Já existe um registro igual.";
   return "Não foi possível salvar. Tente de novo.";
 }
@@ -45,12 +46,22 @@ async function remove(table: Table, section: string, fd: FormData) {
 export async function saveEntity(fd: FormData) {
   await save("entities", "entidades", entitySchema, ["name", "kind", "document"], fd);
 }
-export async function deleteEntity(fd: FormData) { await remove("entities", "entidades", fd); }
+export async function deleteEntity(fd: FormData) {
+  const { supabase } = await getCtx();
+  const to = String(fd.get("move_to") ?? "");
+  if (!to) return back("entidades", "Escolha para onde mover o que usa esta entidade.");
+  const { error } = await supabase.rpc("delete_entity_moving", { p_from: String(fd.get("id") ?? ""), p_to: to });
+  back("entidades", error ? friendly(error) : undefined);
+}
 
 export async function savePerson(fd: FormData) {
   await save("people", "pessoas", personSchema, ["name", "default_entity_id"], fd);
 }
-export async function deletePerson(fd: FormData) { await remove("people", "pessoas", fd); }
+export async function deletePerson(fd: FormData) {
+  const { supabase } = await getCtx();
+  const { error } = await supabase.rpc("delete_person_safe", { p_id: String(fd.get("id") ?? "") });
+  back("pessoas", error ? friendly(error) : undefined);
+}
 
 export async function savePaymentMethod(fd: FormData) {
   await save("payment_methods", "meios", paymentMethodSchema,
@@ -62,12 +73,20 @@ export async function saveCategory(fd: FormData) {
   await save("categories", "categorias", categorySchema,
     ["name", "applies_to", "direction", "dre_line", "nature", "pj_share_pct"], fd);
 }
-export async function deleteCategory(fd: FormData) { await remove("categories", "categorias", fd); }
+export async function deleteCategory(fd: FormData) {
+  const { supabase } = await getCtx();
+  const { error } = await supabase.rpc("delete_category_safe", { p_id: String(fd.get("id") ?? "") });
+  back("categorias", error ? friendly(error) : undefined);
+}
 
 export async function saveClient(fd: FormData) {
   await save("clients", "clientes", clientSchema, ["name", "document", "asaas_customer_id", "active"], fd);
 }
-export async function deleteClient(fd: FormData) { await remove("clients", "clientes", fd); }
+export async function deleteClient(fd: FormData) {
+  const { supabase } = await getCtx();
+  const { error } = await supabase.rpc("delete_client_safe", { p_id: String(fd.get("id") ?? "") });
+  back("clientes", error ? friendly(error) : undefined);
+}
 
 export async function saveSettings(fd: FormData) {
   const parsed = settingsSchema.safeParse(formToObject(fd, ["simples_effective_rate", "opening_balance_cents", "opening_balance_date"]));

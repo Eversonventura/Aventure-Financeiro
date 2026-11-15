@@ -43,3 +43,8 @@ Nada é salvo sozinho: a pessoa confere e toca em Salvar. Valor ilegível volta 
 O DAS vale o pago quando há lançamento; sem ele, usa a alíquota efetiva × receita (Configurações → Geral) e mostra a conferência quando os dois existem.
 `DRE → Gastos da Aventure fora do PJ` lista o que é da empresa mas caiu em meio pessoal e permite migrar a recorrência para o cartão PJ.
 Aplique antes a migration `20261115000004_dre_signed.sql` (separa entradas e saídas dentro de cada linha do DRE).
+
+## Ajustes de uso (feedback)
+- Lançamento: categoria em lista suspensa com "+ Nova categoria"; entrada com "Quem recebe" e cliente (com "+ Novo cliente").
+- Configurações: apagar pessoas, entidades, categorias e clientes que já têm lançamentos (entidades movem o que as usa para outra). Aplique a migration `20261115000005_safe_deletes.sql`.
+- `Clientes`: cadastro mensal simples (nome, valor, dia), painel do mês (esperado, recebido, atrasados, concentração) e marcar como recebido.

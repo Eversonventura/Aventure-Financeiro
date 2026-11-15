@@ -222,3 +222,61 @@ describe("v_dre_monthly com entradas e saídas separadas", () => {
     expect(await as(U.b, `select 1 from v_dre_monthly where month='2027-03-01'`)).toHaveLength(0);
   });
 });
+
+describe("apagar cadastros que já têm lançamentos (funções seguras)", () => {
+  const P = { ale: "80000000-0000-4000-8000-000000000001", ve: "80000000-0000-4000-8000-000000000002" };
+  const ENT = { ale: "20000000-0000-4000-8000-0000000000d1", casa: "20000000-0000-4000-8000-0000000000d2" };
+  const PMX = "60000000-0000-4000-8000-0000000000d1";
+  const CAT = "30000000-0000-4000-8000-0000000000d1";
+  const CLI = "90000000-0000-4000-8000-0000000000d1";
+  beforeAll(async () => {
+    await db.exec(`reset role;
+      insert into entities (id,org_id,name,kind) values ('${ENT.ale}','${O.a}','Alexandre','pf'),('${ENT.casa}','${O.a}','Casa 2','shared');
+      insert into people (id,org_id,name,default_entity_id) values ('${P.ale}','${O.a}','Alexandre','${ENT.ale}');
+      insert into people (id,org_id,name,user_id) values ('${P.ve}','${O.a}','Ventura','${U.a}');
+      insert into payment_methods (id,org_id,name,kind,holder_person_id,owner_entity_id,closing_day,due_day) values ('${PMX}','${O.a}','Cartão Alexandre','credit_card','${P.ale}','${ENT.ale}',29,6);
+      insert into categories (id,org_id,name,direction,dre_line) values ('${CAT}','${O.a}','Categoria X','out','none');
+      insert into clients (id,org_id,name) values ('${CLI}','${O.a}','Cliente X');
+      insert into recurring_rules (id,org_id,direction,description,amount_cents,day_of_month,start_month,entity_id,client_id,category_id)
+        values ('95000000-0000-4000-8000-0000000000d1','${O.a}','in','Cliente X',100000,5,'2026-11-01','${EA}','${CLI}','${CAT}');
+      insert into transactions (id,org_id,type,description,amount_cents,competence_date,cash_date,entity_id,person_id,payment_method_id,category_id,client_id,needs_review)
+        values ('70000000-0000-4000-8000-0000000000d1','${O.a}','expense','Mercado',5000,'2026-11-10','2026-12-06','${ENT.ale}','${P.ale}','${PMX}','${CAT}','${CLI}',false);`);
+  });
+  const ok = (sql: string) => as(U.a, sql);
+
+  it("pessoa: os registros ficam sem pessoa e ela é apagada; quem tem login não", async () => {
+    await ok(`select delete_person_safe('${P.ale}')`);
+    expect(await ok(`select 1 from people where id='${P.ale}'`)).toHaveLength(0);
+    expect(await ok(`select 1 from transactions where id='70000000-0000-4000-8000-0000000000d1' and person_id is null`)).toHaveLength(1);
+    expect(await ok(`select 1 from payment_methods where id='${PMX}' and holder_person_id is null`)).toHaveLength(1);
+    await expect(ok(`select delete_person_safe('${P.ve}')`)).rejects.toThrow(/tem login/);
+  });
+  it("entidade: tudo que a usava (lançamentos, cartão, regras) passa para a de destino", async () => {
+    await expect(ok(`select delete_entity_moving('${ENT.ale}', '${ENT.ale}')`)).rejects.toThrow(/outra entidade/);
+    await ok(`select delete_entity_moving('${ENT.ale}', '${ENT.casa}')`);
+    expect(await ok(`select 1 from entities where id='${ENT.ale}'`)).toHaveLength(0);
+    expect(await ok(`select 1 from transactions where id='70000000-0000-4000-8000-0000000000d1' and entity_id='${ENT.casa}'`)).toHaveLength(1);
+    expect(await ok(`select 1 from payment_methods where id='${PMX}' and owner_entity_id='${ENT.casa}'`)).toHaveLength(1);
+  });
+  it("não apaga a única entidade da empresa (PJ)", async () => {
+    await expect(ok(`select delete_entity_moving('${EA}', '${ENT.casa}')`)).rejects.toThrow(/única entidade da empresa/);
+  });
+  it("categoria: os lançamentos voltam para a fila de revisão", async () => {
+    await ok(`select delete_category_safe('${CAT}')`);
+    expect(await ok(`select 1 from categories where id='${CAT}'`)).toHaveLength(0);
+    expect(await ok(`select 1 from transactions where id='70000000-0000-4000-8000-0000000000d1' and category_id is null and needs_review`)).toHaveLength(1);
+    expect(await ok(`select 1 from recurring_rules where id='95000000-0000-4000-8000-0000000000d1' and category_id is null`)).toHaveLength(1);
+  });
+  it("cliente: lançamentos ficam sem cliente e a recorrência dele é desativada", async () => {
+    await ok(`select delete_client_safe('${CLI}')`);
+    expect(await ok(`select 1 from clients where id='${CLI}'`)).toHaveLength(0);
+    expect(await ok(`select 1 from transactions where id='70000000-0000-4000-8000-0000000000d1' and client_id is null`)).toHaveLength(1);
+    expect(await ok(`select 1 from recurring_rules where id='95000000-0000-4000-8000-0000000000d1' and client_id is null and not active`)).toHaveLength(1);
+  });
+  it("só o dono apaga e só da própria organização", async () => {
+    await expect(as(U.v, `select delete_client_safe('${CLI}')`)).rejects.toThrow(/não encontrado|Sem permissão/);
+    await db.exec(`reset role; insert into clients (id,org_id,name) values ('90000000-0000-4000-8000-0000000000d2','${O.a}','Outro');`);
+    await expect(as(U.v, `select delete_client_safe('90000000-0000-4000-8000-0000000000d2')`)).rejects.toThrow(/Sem permissão/);
+    await expect(as(U.b, `select delete_client_safe('90000000-0000-4000-8000-0000000000d2')`)).rejects.toThrow(/não encontrado/);
+  });
+});

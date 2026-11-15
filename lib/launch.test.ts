@@ -118,3 +118,16 @@ describe("validação do lançamento", () => {
     expect(() => input({ id: "abc" })).toThrow();
   });
 });
+
+describe("entrada com cliente", () => {
+  const CLI = "90000000-0000-4000-8000-000000000001";
+  it("a entrada leva o cliente; a saída ignora", () => {
+    const entrada = ok(buildLaunch(input({ type: "income", payment_method_id: pix.id, client_id: CLI }), pix)).rows[0];
+    expect(entrada).toMatchObject({ type: "income", client_id: CLI, status: "paid" });
+    const saida = ok(buildLaunch(input({ client_id: CLI }), itau)).rows[0];
+    expect(saida.client_id).toBeNull();
+  });
+  it("entrada avulsa, sem cliente nem meio, é aceita", () => {
+    expect(ok(buildLaunch(input({ type: "income", payment_method_id: null, client_id: null }), null)).rows[0].client_id).toBeNull();
+  });
+});

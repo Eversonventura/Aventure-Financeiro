@@ -23,7 +23,8 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ e
         title={(r) => r.name}
         subtitle={(r) => `${r.user_id ? "Com login" : "Sem login"} · padrão: ${nome.get(r.default_entity_id ?? "") ?? "—"}`}
         valuesOf={(r) => ({ name: r.name, default_entity_id: r.default_entity_id ?? "" })}
-        saveAction={savePerson} deleteAction={deletePerson} />
+        saveAction={savePerson} deleteAction={deletePerson}
+        deleteConfirm={(r) => `Apagar "${r.name}"? Os lançamentos e cartões ligados a esta pessoa ficam sem pessoa.`} />
     </Section>
   );
 }

@@ -24,5 +24,6 @@ export const IconGrid = (p: P) => (<svg {...base(p)}><rect x="3.5" y="3.5" width
 export const IconFlow = (p: P) => (<svg {...base(p)}><path d="M3 17c3 0 3-10 6-10s3 10 6 10 3-6 6-6" /><path d="M3 21h18" /></svg>);
 export const IconUpload = (p: P) => (<svg {...base(p)}><path d="M12 16V4M7 9l5-5 5 5" /><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" /></svg>);
 export const IconCheck = (p: P) => (<svg {...base(p)}><circle cx="12" cy="12" r="9" /><path d="m8 12.5 2.8 2.8L16 9.8" /></svg>);
+export const IconUsers = (p: P) => (<svg {...base(p)}><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6M16 4.8a3.5 3.5 0 0 1 0 6.4M17.5 14.3c2.3.7 4 2.6 4 5.7" /></svg>);
 export const IconMic = (p: P) => (<svg {...base(p)}><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3" /></svg>);
 export const IconCamera = (p: P) => (<svg {...base(p)}><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z" /><circle cx="12" cy="13" r="3.5" /></svg>);
