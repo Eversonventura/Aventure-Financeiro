@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { DailyChart } from "@/components/charts";
-import { Orbits } from "@/components/orbits";
 import { TxList } from "@/components/tx-list";
 import { monthTitle } from "@/lib/dates";
 import { centsToBRL } from "@/lib/format";
@@ -16,25 +15,15 @@ export type InicioData = {
   aPagar: number; aReceber: number; atrasadas: number; revisar: number;
 };
 
-/** Início: o mês em números, um gráfico por dia e a tabela de todos os lançamentos. No celular não tem banner. */
+/** Início: o mês em números, um gráfico por dia e a tabela de todos os lançamentos. Sem banner. */
 export function InicioView({ mes, totals, daily, txs, hasMore, aPagar, aReceber, atrasadas, revisar }: InicioData) {
   const ant = addInvoiceMonths(mes, -1).slice(0, 7);
   const prox = addInvoiceMonths(mes, 1).slice(0, 7);
   return (
-    <div className="md:-mx-11 md:-my-8">
-      {/* banner: só no computador */}
-      <section className="relative hidden overflow-hidden border-b border-line px-11 py-12 md:block">
-        <Orbits className="top-0 right-0 h-full w-3/4" />
-        <div className="relative max-w-2xl">
-          <h1 className="font-heading text-5xl leading-[1.05] font-bold">Bem-vindo ao<br />Aventure Financeiro</h1>
-          <p className="mt-3 max-w-xl text-lg text-muted">Lance em segundos e acompanhe o mês: tudo o que entrou e saiu, no caixa único da família e da empresa.</p>
-        </div>
-      </section>
-
-      <div className="mx-auto flex max-w-3xl flex-col gap-6 md:px-11 md:py-8">
+    <div>
+      <div className="mx-auto flex max-w-3xl flex-col gap-6">
         <div className="flex items-center justify-between gap-3">
-          <h1 className="text-2xl font-semibold md:hidden">Início</h1>
-          <h2 className="hidden text-xl font-semibold md:block">Lançamentos do mês</h2>
+          <h1 className="text-2xl font-semibold">Início</h1>
           <div className="flex items-center gap-2">
             <Link href={`/?mes=${ant}`} className="rounded-lg border border-line-strong px-3 py-1.5" aria-label="Mês anterior">‹</Link>
             <span className="min-w-28 text-center text-sm font-medium">{monthTitle(mes)}</span>
